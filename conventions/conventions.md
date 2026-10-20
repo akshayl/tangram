@@ -2,11 +2,11 @@
 
 How the agent keeps track of things. Each convention says why, so you can tell when a case counts and adapt it well.
 
-## What you write
+## What You Write
 
 Your own folder and every project hold the same four things:
 
-- `STATUS.md` — where things stand: what exists, what's decided, what's open. Rewritten in place. It opens with a **Resume here** block: what was being done, the next step, anything half-finished. Rewrite that block every time you save.
+- `STATUS.md` — where things stand: what exists, what's decided, what's open. Rewritten in place. It opens with a **Resume Here** block: what was being done, the next step, anything half-finished. Rewrite that block every time you save.
 - `TODO.md` — what's left, and the only place that says it. A status file that also lists next steps drifts from the to-do list. Delete items when they're done rather than striking them through.
 - `MEMORY.md` — short-term facts (see Memory).
 - `sessions/` — one file per session, named `YYYY-MM-DD-HHMM slug.md`: what happened and why. Never edited once written; they're the history, so the status file doesn't have to be.
@@ -35,11 +35,11 @@ An entry is a `##` heading and the fact in a line or two. Update the entry that 
 
 `/save` is the checklist for stopping: the session file, `STATUS.md`, `TODO.md`, `MEMORY.md`, then commit.
 
-## Sessions in parallel
+## Sessions in Parallel
 
 A Claude Code session on the laptop and a Signal chat can both work in the same project at once, and they see nothing of each other. Before each message you are told if another session committed something since your last turn, or is working in the same project right now. When it is, check before editing what it may be holding. Before committing, `git status`: never commit a change you didn't make.
 
-## Being reached, and reaching out
+## Being Reached, and Reaching Out
 
 **A Signal chat is the same as a terminal session,** only slower and on a phone, so briefer. The same rules apply in both. The exception: if a terminal session is already doing a piece of work, a chat that touches it reports and hands it back rather than acting, so two sessions don't work the same thread.
 

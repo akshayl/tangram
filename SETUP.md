@@ -1,8 +1,8 @@
-# Setting up Tangram
+# Setting Up Tangram
 
 These are instructions for you, Claude Code, to follow with the person who pasted the link. You're going to build them their own personal agent, on this Mac, by talking them through it.
 
-## How to run this
+## How to Run This
 
 **Talk to them, don't just run commands.** Assume they're not technical. Before anything else, tell them what you're going to do together and list the steps below in plain words. Then take one step at a time. Open each one the way the step's heading does — "Step 4. Let's set up email for your agent." — say what it is and why it's worth having, then do it.
 
@@ -14,7 +14,7 @@ These are instructions for you, Claude Code, to follow with the person who paste
 
 **Get the files.** Download this repository to a temporary folder first (`git clone https://github.com/akshayl/tangram.git /tmp/tangram`, or the zip from GitHub if git isn't there yet). Paths below like `code/` and `conventions/` mean that copy.
 
-## Before the steps: check, and look at what's here
+## Before the Steps: Check, and Look at What's Here
 
 1. **Check you can run commands on this computer.** Run `sw_vers` and `whoami`. If you can't run commands — you're the Claude app or a website, not Claude Code — tell them this needs Claude Code on their Mac, how to get it (claude.com/claude-code), and stop.
 2. **This is built for a Mac.** If `sw_vers` fails, say so and stop.
@@ -23,7 +23,7 @@ These are instructions for you, Claude Code, to follow with the person who paste
 5. **Merge, never replace.** Their own instructions stay. Everything Tangram adds lives in the agent's folder, so ordinary Claude Code elsewhere on the Mac stays exactly as it was. The only change outside that folder is one hook added to `~/.claude/settings.json` (Step 5), which does nothing outside the agent's folders.
 6. **Tools.** You'll need Homebrew (`brew`). If it's missing, it's the one install that asks for their Mac password: explain that, run the installer from brew.sh, and let them type the password. Then `brew install git uv`.
 
-## Step 1. Let's meet your agent
+## Step 1. Let's Meet Your Agent
 
 *What it is:* your own agent — a name, a personality, and a folder where it keeps its notes: where things stand, what's left to do, what it has learned, and a log of every session. Everything in it can be undone.
 
@@ -48,7 +48,7 @@ These are instructions for you, Claude Code, to follow with the person who paste
 
 **Try it:** ask them to open a new Claude Code window, `cd` into the agent's folder (give them the exact command), start `claude` and ask "who are you?". Then: "tell your agent to set up a project for something you're working on."
 
-## Step 2. Let's give your agent a phone number on Signal
+## Step 2. Let's Give Your Agent a Phone Number on Signal
 
 *What it is:* your agent gets its own number on Signal, so it can message you first — a reminder, a finished job, something that needs you — which it can't do from Claude Code alone. You can message it from your phone too, like any other contact, in a chat that's end-to-end encrypted. It can't use your number: it would speak as you and see all your messages.
 
@@ -71,7 +71,7 @@ These are instructions for you, Claude Code, to follow with the person who paste
 
 **Try it:** ask them to add the number as a contact named after the agent and message it "hi" from their phone. They should see 👀, then a reply. Then try a voice note.
 
-## Step 3. Let's let your agent do things on a schedule
+## Step 3. Let's Let Your Agent Do Things on a Schedule
 
 *What it is:* reminders and routines — "remind me at 10pm to call Mum", "every Monday at 8, tell me what my week looks like". You never set these up yourself; you just ask your agent, and it adds them to its schedule. It also runs the agent's own upkeep at night.
 
@@ -83,7 +83,7 @@ These are instructions for you, Claude Code, to follow with the person who paste
 
 **Try it:** ask them to message the agent on Signal: "send me a fun fact about octopuses in two minutes." It should arrive, labelled as scheduled.
 
-## Step 4. Let's set up email for your agent
+## Step 4. Let's Set Up Email for Your Agent
 
 *What it is:* your agent gets its own email address. You can forward it things — a receipt, a booking, a document — and ask it to look; it can email you, on request or on a schedule. It only reads its inbox when asked, and it never acts on what someone else's email says.
 
@@ -97,7 +97,7 @@ These are instructions for you, Claude Code, to follow with the person who paste
 
 **Try it:** the agent emails them hello; they reply. Then they ask the agent "check your email".
 
-## Step 5. Let's give your agent a memory
+## Step 5. Let's Give Your Agent a Memory
 
 *What it is:* Total Recall. Before every message, your agent quietly searches everything it has written and everything you've said to it, and puts the most relevant few passages in front of itself — so it remembers things from other conversations without you repeating them. Every night it "dreams": it reads what happened that day and keeps a tidy set of notes, by subject, of what it has learned. Everything stays on this Mac. It gets better the more you use it.
 
@@ -117,6 +117,6 @@ These are instructions for you, Claude Code, to follow with the person who paste
 2. Give them a short summary of what they now have, and point them at `GUIDE.md` for how to use it — read them its headings.
 3. Send the feedback report (below).
 
-## The feedback report
+## The Feedback Report
 
 This is a pilot: Tangram's author wants to know how setup went. At the end — or wherever setup stops, if it can't go on — write `tangram-feedback.md` in the agent's folder (or the temporary folder, if Step 1 isn't done), from `runs/setup.md` and what you saw: each step, what worked, what didn't, where they got stuck or confused, what you had to work out yourself because these instructions were wrong or unclear, and roughly how long it took. Ask them to add anything in their own words. Then open the file for them and ask them to email it — attached or pasted — to akshay.luther@gmail.com with the subject "Tangram feedback". Never send it yourself.
