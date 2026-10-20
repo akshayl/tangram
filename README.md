@@ -15,7 +15,12 @@ Everything runs on your Mac, and only while it's awake.
 
 Paste this into Claude Code once:
 
-> Install Tangram for me: read https://github.com/akshayl/tangram/blob/main/SETUP.md and follow it to build my own personal agent, stopping whenever you need me. If anything goes wrong, offer to write it up as a "Tangram feedback" email for me to send.
+```text
+Install Tangram for me: read https://github.com/akshayl/tangram/blob/main/SETUP.md
+and follow it to build my own personal agent, stopping whenever you need me.
+If anything goes wrong, offer to write it up as a "Tangram feedback" email
+for me to send.
+```
 
 The agent explains each step before taking it and does the technical work. You choose its name and personality, and handle the parts that need a person: signing up for a phone number and an email inbox, and entering a code or two.
 
