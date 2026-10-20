@@ -11,7 +11,7 @@ Tangram is a framework for building your own personal agent on Claude Code. You 
 
 Everything runs on your Mac, and only while it's awake.
 
-## Install
+## Quick start
 
 Paste this into Claude Code once:
 
