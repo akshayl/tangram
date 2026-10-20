@@ -1,0 +1,46 @@
+{
+  "alerts": "direct",
+  "jobs": [
+    {
+      "label": "tangram.signal",
+      "what": "The Signal listener",
+      "broken": "has stopped, so messages on Signal aren't being answered",
+      "always_on": true
+    },
+    {
+      "label": "tangram.schedule",
+      "what": "The scheduler",
+      "broken": "has stopped, so nothing scheduled will run",
+      "always_on": true
+    },
+    {
+      "label": "tangram.recall",
+      "what": "Total Recall",
+      "broken": "has stopped, so sessions can't look anything up",
+      "always_on": true
+    }
+  ],
+  "urls": [
+    {
+      "url": "http://127.0.0.1:7583/api/v1/check",
+      "what": "The Signal daemon",
+      "broken": "Signal isn't connected on the laptop, so nothing can be sent or received."
+    },
+    {
+      "url": "http://127.0.0.1:7585/health",
+      "what": "Total Recall",
+      "broken": "Total Recall isn't answering, so sessions can't look anything up."
+    }
+  ],
+  "runs": [],
+  "repos": [
+    {
+      "what": "The agent's folder",
+      "dir": "~/agent"
+    },
+    {
+      "what": "The projects folder",
+      "dir": "~/projects"
+    }
+  ]
+}

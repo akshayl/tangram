@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Setup replaces {{AGENT}} with the agent's folder (full path, no ~) and
+     installs this into ~/Library/LaunchAgents. launchd keeps it running and
+     restarts it if it dies. -->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>tangram.signal</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/caffeinate</string>
+    <string>-s</string>
+    <string>{{AGENT}}/code/.venv/bin/python3</string>
+    <string>-u</string>
+    <string>{{AGENT}}/code/signal_chat.py</string>
+    <string>listen</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key><string>{{HOME}}/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>30</integer>
+  <key>ProcessType</key><string>Background</string>
+  <key>StandardOutPath</key><string>{{AGENT}}/runs/signal/listen.log</string>
+  <key>StandardErrorPath</key><string>{{AGENT}}/runs/signal/listen.log</string>
+</dict>
+</plist>
