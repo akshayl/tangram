@@ -13,10 +13,10 @@ Check these before starting. If one is missing, say so before building, because 
 | Needs | Why | In Claude Code |
 | --- | --- | --- |
 | Runs commands and edits files | It builds the setup, and does the work | Built in |
-| Loads instruction files at the start of a session, and one file can pull in another | Every project session must arrive knowing who the agent is | `CLAUDE.md`, and `@` imports |
+| Loads instruction files at the start of a session, and one file can pull in another — or some other way to give every project session the agent's rules, such as the hook below | Every project session must arrive knowing who the agent is | `CLAUDE.md`, and `@` imports |
 | Runs without a person: a prompt from a script, the answer streamed back, a conversation resumed by its ID | Signal chats, scheduled jobs and the dream all run this way | `claude -p`, `--output-format stream-json`, `--resume` |
-| Runs something before each message that can add to what the model sees | Total Recall puts relevant passages in front of every message | The `UserPromptSubmit` hook |
-| Limits a run's writes and tools, enforced by the agent rather than asked for in the prompt | The dream and housekeeping run with nobody watching | `--settings` with permission rules, `--permission-mode dontAsk` |
+| Runs something before each message that can add to what the model sees | Total Recall puts relevant passages in front of every message. If the agent must be told to trust or enable a hook, setup does that, or sessions start without recall | The `UserPromptSubmit` hook |
+| Limits a run's writes and tools, enforced rather than asked for in the prompt: by the agent's permissions, or by running it read-only and having a script check and apply the edits it proposes | The dream and housekeeping run with nobody watching | `--settings` with permission rules, `--permission-mode dontAsk` |
 | Saves conversations as readable files | Recall searches them; the dream reads the day from them | `~/.claude/projects/<folder>/<session>.jsonl` |
 | Runs headless on the person's subscription | Otherwise every message is billed separately | A subscription login, or a long-lived token from `claude setup-token` |
 
@@ -34,7 +34,7 @@ A name, a personality and a folder: its rules (`CLAUDE.md`, importing `conventio
 
 ### 2. Projects
 
-A folder per project in a projects folder, each with the same four files and an instruction file whose first line pulls in the agent. A folder without that line is the plain coding agent.
+A folder per project in a projects folder, each with the same four files and an instruction file that pulls in the agent. A folder without that line is the plain coding agent.
 
 *Must hold:* a session opened in a project is the agent, with the project's state. The projects folder is a git repository too.
 
@@ -44,7 +44,7 @@ A folder per project in a projects folder, each with the same four files and an 
 
 The agent's own number, so it can start a conversation — a reminder, a finished job — and the person can message it from their phone. Each chat maps to a folder (the agent's, or a project's) and is answered by the coding agent running there headless, with the same rules, memory and tools as at the keyboard.
 
-*Must hold:* a message is kept on disk until it's answered, so a restart or crash loses nothing. A chat's conversation continues across messages, and is resumed if its process dies. A message sent while the agent is working reaches it. Only the person's own numbers are answered. It must not use the person's own Signal number: it would speak as them and see everything.
+*Must hold:* a message is kept on disk until it's answered, or the person is told it couldn't be, so a restart or crash loses nothing silently. A chat's conversation continues across messages, and is resumed if its process dies. A message sent while the agent is working reaches it. Only the person's own numbers are answered. It must not use the person's own Signal number: it would speak as them and see everything.
 
 *Check:* a message from their phone gets an answer from the agent with its memory; a second message continues the conversation; restarting the listener mid-reply still answers.
 
@@ -52,7 +52,7 @@ The agent's own number, so it can start a conversation — a reminder, a finishe
 
 One resident process and a table, `schedule.json`, of what runs when: a command, or a request in plain words answered by a fresh session and sent to Signal or email. The agent's upkeep — the dream, housekeeping, the weekly tidy — is rows in the same table.
 
-*Must hold:* a job missed while the computer slept runs once on waking, not once per missed slot. A job seen for the first time is recorded, not run. A job that runs past its timeout is stopped with everything it started. A restart of the scheduler doesn't kill running jobs.
+*Must hold:* a job missed while the computer slept runs once on waking, not once per missed slot. A recurring job seen for the first time is recorded, not run, so a new row doesn't fire for a slot that passed before it existed; a one-off runs when it's due. A job that runs past its timeout is stopped with everything it started. A restart of the scheduler doesn't kill running jobs.
 
 *Check:* "send me a fun fact in two minutes" arrives, labelled as scheduled.
 
@@ -74,11 +74,11 @@ Keyword and vector search over everything written and said — files, conversati
 
 ### 7. Total Recall: Dreaming and Housekeeping
 
-Each night, once the computer has been idle for half an hour: housekeeping first, then the dream, each to the end. Housekeeping brings every active folder's `STATUS.md` and `TODO.md` up to date from the day. The dream rewrites knowledge by subject from the day — small notes, each claim citing its source, and a summary per subject — then empties memory into it.
+Each night, once the computer has been idle for half an hour: housekeeping first, to the end, then the dream. If housekeeping fails, the dream still runs, because the day still has to reach knowledge. Housekeeping brings every active folder's `STATUS.md` and `TODO.md` up to date from the day. The dream rewrites knowledge by subject from the day — small notes, each claim citing its source, and a summary per subject — then empties memory into it.
 
-*Must hold:* each of these sessions can write only where its job allows — housekeeping only those two files, a subject's rewrite only that subject's folder, memory only by deleting whole entries — and that limit is enforced by the coding agent's permissions, not by asking in the prompt. A session that fails puts back what it touched, from the files as they were on disk, not from git. The person's own words outrank any agent's account. Nothing the dream writes changes how the agent behaves.
+*Must hold:* each of these sessions can write only where its job allows — housekeeping only those two files, a subject's rewrite only that subject's folder, memory only by deleting, never adding or rewording — and that limit is enforced, by the coding agent's permissions or by a script that checks and applies what a read-only run proposes, never by the prompt alone. A session that fails puts back what it touched, from the files as they were on disk, not from git. The person's own words outrank any agent's account. Nothing the dream writes changes how the agent behaves.
 
-*Check:* after a night, `knowledge/` has notes citing that day, memory is shorter, and status files are current. A dream session asked to write outside its folder is refused.
+*Check:* after a night, `knowledge/` has notes citing that day, memory is shorter, and status files are current. A dream session asked to write outside its folder is refused, by the enforcement rather than by the model choosing not to.
 
 ### 8. The GitHub Copy (Optional)
 
