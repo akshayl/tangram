@@ -322,15 +322,18 @@ def stop(pid, proc=None):
     """The whole job: politely, then not. With the Popen in hand, its exit is
     seen at once; a dead child we have not reaped still answers `kill 0`."""
     gone = (lambda: proc.poll() is not None) if proc else (lambda: not alive(pid))
-    for sig, grace in ((signal.SIGTERM, 10), (signal.SIGKILL, 0)):
-        try:
-            os.killpg(pid, sig)
-        except OSError:
-            return
-        for _ in range(grace * 4):
-            if gone():
-                return
-            time.sleep(0.25)
+    try:
+        os.killpg(pid, signal.SIGTERM)
+    except OSError:
+        return
+    for _ in range(40):
+        if gone():
+            break
+        time.sleep(0.25)
+    try:                                          # the group too: a child can outlive its leader
+        os.killpg(pid, signal.SIGKILL)
+    except OSError:
+        pass
 
 
 def said(name):
