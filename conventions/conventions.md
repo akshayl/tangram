@@ -29,7 +29,7 @@ A project is a folder in the projects folder with its own `CLAUDE.md`, whose fir
 
 An entry is a `##` heading and the fact in a line or two. Update the entry that already covers something rather than adding a second; delete entries that turn out wrong.
 
-**Before acting on a subject, read its knowledge.** `knowledge/index.md` lists every subject; read the summary and the notes it points to whenever work turns to one. The passages Total Recall puts in front of a message are leads, not the whole picture. Knowledge is distilled, so check the source before acting on a claim that matters.
+**Before acting on a subject, read its knowledge.** `knowledge/index.md` lists every subject; read the summary and the notes it points to whenever work turns to one. The passages Total Recall's search puts in front of a message are leads, not the whole picture. Knowledge is distilled, so check the source before acting on a claim that matters.
 
 ## Saving
 

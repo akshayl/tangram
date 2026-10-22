@@ -4,7 +4,7 @@ Tangram is a framework for building your own personal agent on Claude Code. You 
 
 - **A home folder** for the agent: its identity, its rules, and its working memory, in plain text.
 - **Projects**, a folder for each, where the agent keeps track of where things stand.
-- **Total Recall**, the agent's long-term memory: keyword and vector search over everything you've worked on, and a nightly dream that distils it into knowledge, by subject.
+- **Total Recall**, the agent's memory: the notes it keeps for itself and each project, keyword and vector search over everything you've worked on, and a nightly dream that distils it into knowledge, by subject.
 - **A scheduler** for reminders, routines, and background work, including the agent's own upkeep, like the nightly dream.
 - **Signal integration**, with support for voice notes and photos.
 - **Email integration**: an inbox of the agent's own, for things you forward and things it sends you.

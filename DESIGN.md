@@ -15,7 +15,7 @@ Check these before starting. If one is missing, say so before building, because 
 | Runs commands and edits files | It builds the setup, and does the work | Built in |
 | Loads instruction files at the start of a session, and one file can pull in another — or some other way to give every project session the agent's rules, such as the hook below | Every project session must arrive knowing who the agent is | `CLAUDE.md`, and `@` imports |
 | Runs without a person: a prompt from a script, the answer streamed back, a conversation resumed by its ID | Signal chats, scheduled jobs and the dream all run this way | `claude -p`, `--output-format stream-json`, `--resume` |
-| Runs something before each message that can add to what the model sees | Total Recall puts relevant passages in front of every message. If the agent must be told to trust or enable a hook, setup does that, or sessions start without recall | The `UserPromptSubmit` hook |
+| Runs something before each message that can add to what the model sees | Total Recall's search puts relevant passages in front of every message. If the agent must be told to trust or enable a hook, setup does that, or sessions start without recall | The `UserPromptSubmit` hook |
 | Limits a run's writes and tools, enforced rather than asked for in the prompt: by the agent's permissions, or by running it read-only and having a script check and apply the edits it proposes | The dream and housekeeping run with nobody watching | `--settings` with permission rules, `--permission-mode dontAsk` |
 | Saves conversations as readable files | Recall searches them; the dream reads the day from them | `~/.claude/projects/<folder>/<session>.jsonl` |
 | Runs headless on the person's subscription | Otherwise every message is billed separately | A subscription login, or a long-lived token from `claude setup-token` |
@@ -23,6 +23,8 @@ Check these before starting. If one is missing, say so before building, because 
 ## The Parts
 
 Each part says what it's for, what must hold however it is built, and how to check it. They are built in this order, and each works before the next starts.
+
+**Total Recall** is the name for the whole memory system, whose job is the right context at the right time: the notes the agent keeps for itself and each project (parts 1 and 2), the search (part 6), and the dream with its upkeep (part 7).
 
 ### 1. The Agent
 

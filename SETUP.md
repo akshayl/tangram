@@ -101,7 +101,7 @@ They're written for Claude Code on a Mac, the implementation that has been built
 
 ## Step 5. Let's Give Your Agent a Memory
 
-*What it is:* Total Recall. Before every message, your agent quietly searches everything it has written and everything you've said to it, and puts the most relevant few passages in front of itself — so it remembers things from other conversations without you repeating them. Every night it "dreams": it reads what happened that day and keeps a tidy set of notes, by subject, of what it has learned. Everything stays on this Mac. It gets better the more you use it.
+*What it is:* the rest of Total Recall, your agent's memory. Step 1 gave it notes; now, before every message, your agent quietly searches everything it has written and everything you've said to it, and puts the most relevant few passages in front of itself — so it remembers things from other conversations without you repeating them. Every night it "dreams": it reads what happened that day and keeps a tidy set of notes, by subject, of what it has learned. Everything stays on this Mac. It gets better the more you use it.
 
 1. Ask one question: should it include their past Claude Code conversations, or only conversations with the agent from now on? Including them gives it something to remember from day one. If "from now on", write `<agent folder>/recall.json` with `{"since": "<now>"}`, the time in UTC to the second (`date -u +%Y-%m-%dT%H:%M:%SZ`): conversations before it, and conversations outside the agent's folders, stay out.
 2. Build the index: `code/.venv/bin/python code/recall.py index`. The first build downloads a small search model and can take a while if there's a lot of history — tell them roughly how long as it goes.
