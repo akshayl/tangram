@@ -45,6 +45,10 @@ You don't do anything. Before every message, your agent looks back through every
 
 It gets better the more you use it. In the first few weeks it knows little; after a while it remembers the things you'd otherwise have to repeat.
 
+## Your Copy on GitHub
+
+If you chose one at setup, your agent's folder and your projects are copied to private repositories on GitHub every night, so a lost or broken Mac doesn't take what your agent has learned with it. Only you can see them. If you didn't, and want one now, ask your agent: "keep a copy on GitHub."
+
 ## Two Things Worth Knowing
 
 - **"Check for updates"** — when Tangram improves, your agent tells you what's new and asks whether you want each change. You can also ask it any time.

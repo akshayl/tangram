@@ -18,6 +18,8 @@ Each entry says **what** changed, **why**, and **how to adopt** it. Code under `
 
 **The design is written down for any coding agent.** `DESIGN.md` says what each part is for, what must hold however it's built, how to check it, and which parts of `code/` are specific to Claude Code or a Mac. `SETUP.md` stays the tested Claude Code on a Mac implementation; another coding agent follows it and adapts. *Adopt:* nothing to install. If this setup was built on something other than Claude Code on a Mac, read `DESIGN.md`'s "Must hold" lines and check each against what was built. *Guide:* no change.
 
+**An optional private copy on GitHub.** Setup now offers Step 6: private GitHub repositories for the agent's folder and the projects folder. The nightly dream pushes every repository that has a copy on GitHub, after housekeeping and the dream, and never forces; a failed push is reported on Signal. Why: without it, everything the agent learns lives on one Mac, and is lost with it; with it, a new computer or a session elsewhere can start from the same files. *Adopt:* copy `code/dream.py` and merge the new paragraph in `conventions/conventions.md`'s Saving section. Then offer the copy to the user as in `SETUP.md` Step 6; if they decline, nothing else changes. *Guide:* add the "Your Copy on GitHub" section.
+
 ## 0.1.0
 
 The first version: the agent with its habits and conventions, projects, Signal, the scheduler, email, and Total Recall (search and dreaming). Nothing to adopt — this is what setup installs.
