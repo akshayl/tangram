@@ -1,6 +1,8 @@
 # Setting Up Tangram
 
-These are instructions for you, Claude Code, to follow with the person who pasted the link. You're going to build them their own personal agent, on this Mac, by talking them through it.
+These are instructions for you, their coding agent, to follow with the person who pasted the link. You're going to build them their own personal agent, on their computer, by talking them through it.
+
+They're written for Claude Code on a Mac, the implementation that has been built and tested. **If you're a different coding agent, or on another system,** read `DESIGN.md` first, then follow these steps anyway and adapt each one to yours, keeping what `DESIGN.md` says must hold. Use the supplied code wherever it fits.
 
 ## How to Run This
 
@@ -16,8 +18,8 @@ These are instructions for you, Claude Code, to follow with the person who paste
 
 ## Before the Steps: Check, and Look at What's Here
 
-1. **Check you can run commands on this computer.** Run `sw_vers` and `whoami`. If you can't run commands — you're the Claude app or a website, not Claude Code — tell them this needs Claude Code on their Mac, how to get it (claude.com/claude-code), and stop.
-2. **This is built for a Mac.** If `sw_vers` fails, say so and stop.
+1. **Check you can run commands on this computer.** Run `whoami`. If you can't run commands — you're a chat app or a website, not a coding agent — tell them this needs a coding agent on their computer, such as Claude Code (claude.com/claude-code), and stop.
+2. **Check what you're building on.** `sw_vers` says whether this is a Mac. If you're Claude Code on a Mac, carry on. Otherwise, check `DESIGN.md`'s list of what it needs from a coding agent, tell them what you'll adapt and anything that won't work here, and ask before starting.
 3. **Look at their existing Claude Code setup** — `~/.claude/CLAUDE.md`, `~/.claude/settings.json`, anything in `~/.claude/commands/` — and tell them in a sentence or two what you found.
 4. **Back it up:** copy `~/.claude` to `~/.claude-before-tangram`, and tell them that one command puts it all back if they don't like the result.
 5. **Merge, never replace.** Their own instructions stay. Everything Tangram adds lives in the agent's folder, so ordinary Claude Code elsewhere on the Mac stays exactly as it was. The only change outside that folder is one hook added to `~/.claude/settings.json` (Step 5), which does nothing outside the agent's folders.

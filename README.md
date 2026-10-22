@@ -24,11 +24,12 @@ for me to send.
 
 The agent explains each step before taking it and does the technical work. You choose its name and personality, and handle the parts that need a person: signing up for a phone number and an email inbox, and entering a code or two.
 
-Requires macOS and a Claude subscription that includes Claude Code.
+Built and tested on Claude Code on a Mac, with a Claude subscription. With another coding agent or system, your agent adapts it from `DESIGN.md`.
 
 ## What's Here
 
-- `SETUP.md` — the instructions your agent follows to build it.
+- `DESIGN.md` — what each part is for and what must hold, for any coding agent on any system.
+- `SETUP.md` — the instructions your agent follows to build it, written for Claude Code on a Mac; another coding agent adapts them.
 - `GUIDE.md` — how to use it once it's built.
 - `conventions/` — how the agent behaves and what it writes down, each with why.
 - `code/` — the Signal listener, the scheduler, email, and Total Recall.

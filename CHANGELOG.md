@@ -16,6 +16,8 @@ Each entry says **what** changed, **why**, and **how to adopt** it. Code under `
 
 **Every line in `STATUS.md` must pass one test:** is it true today, and would a session starting cold need it to act? Whoever touches the file deletes what fails, rewrites a section whole, and sets "Last updated". *Adopt:* merge the new paragraph in `conventions/conventions.md` and the new sentence in step 3 of `conventions/templates/save.md` (installed as `~/.claude/commands/save.md`) around any changes the user made. *Guide:* no change.
 
+**The design is written down for any coding agent.** `DESIGN.md` says what each part is for, what must hold however it's built, how to check it, and which parts of `code/` are specific to Claude Code or a Mac. `SETUP.md` stays the tested Claude Code on a Mac implementation; another coding agent follows it and adapts. *Adopt:* nothing to install. If this setup was built on something other than Claude Code on a Mac, read `DESIGN.md`'s "Must hold" lines and check each against what was built. *Guide:* no change.
+
 ## 0.1.0
 
 The first version: the agent with its habits and conventions, projects, Signal, the scheduler, email, and Total Recall (search and dreaming). Nothing to adopt — this is what setup installs.
