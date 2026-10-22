@@ -24,6 +24,8 @@ Each entry says **what** changed, **why**, and **how to adopt** it. Code under `
 
 **Failures leave nothing behind, and nothing is lost on restart.** A dream, memory or status session that fails — an error, a silent exit, or a timeout — now puts back everything it wrote, including knowledge changed by a failed memory emptying; before, a timeout or a silent failure could leave half-done edits. Memory may now lose only whole entries: the check compared lines, so part of an entry could go. A Signal reply that fails to send is kept on disk and retried each quiet minute, so a listener restart can't lose it. Setup's "only conversations from now on" is a time to the second and covers only the agent's folders; it was a date, which let in chats from earlier that day and from anywhere on the Mac. *Adopt:* copy `code/dream.py`, `code/status_cleanup.py`, `code/signal_chat.py` and `code/recall.py`. If `recall.json` has a `since` date, it keeps working as before; offer to change it to the setup time. *Guide:* no change.
 
+**A put-back never loses someone else's edit.** When a failed night session's writes are put back, a copy of everything replaced is kept in `runs/dream/put-back/`, since a chat may have edited the same file meanwhile; a failed memory emptying keeps any entry added since it started. *Adopt:* copy `code/dream.py` and `code/status_cleanup.py`. *Guide:* no change.
+
 ## 0.1.0
 
 The first version: the agent with its habits and conventions, projects, Signal, the scheduler, email, and Total Recall (search and dreaming). Nothing to adopt — this is what setup installs.

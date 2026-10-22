@@ -413,20 +413,47 @@ def snapshot(folder):
     return snap
 
 
+KEPT = os.path.join(RUNS, "put-back")   # what a put-back replaced, in case it wasn't the failed run's
+
+
+def keep(path):
+    """Save a file as it is now before a put-back replaces or removes it. A put-back
+    can't tell the failed run's edits from someone else's made meanwhile — a chat
+    writing during the night — so nothing it replaces is lost. Returns where it went."""
+    dest = os.path.join(KEPT, time.strftime("%Y-%m-%d-%H%M%S"), path.lstrip(os.sep))   # its full path, mirrored
+    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    shutil.copy2(path, dest)
+    return dest
+
+
 def restore(folder, snap):
     """Put folder back to snap: files it made go, files it changed or removed
-    come back. A failed session leaves nothing behind."""
+    come back. A failed session leaves nothing behind;
+    whatever is replaced is kept first. Returns the kept copies."""
+    kept = []
     for p in set(snapshot(folder)) - set(snap):
+        kept.append(keep(p))
         os.remove(p)
     for p, data in snap.items():
         try:
             with open(p, "rb") as fh:
                 if fh.read() == data:
                     continue
+            kept.append(keep(p))
         except OSError:
             os.makedirs(os.path.dirname(p), exist_ok=True)
         with open(p, "wb") as fh:
             fh.write(data)
+    return kept
+
+
+def merged(before, now):
+    """A memory file put back after a failed emptying: every entry it had, plus any
+    entry added since. The run may only delete, so an added entry is someone
+    else's — a chat that learned a fact mid-run — and stays."""
+    old, new = entries(before)[1], entries(now)[1]
+    added = [e for e in new if e not in old]
+    return before.rstrip("\n") + "".join("\n\n" + e for e in added) + "\n" if added else before
 
 
 def claude(prompt, material, name, writable=None, timeout=1800):
@@ -694,7 +721,11 @@ def prune(material, files=None):
         except subprocess.TimeoutExpired:
             why = "timed out"
         if why:                                   # failed partway: memory and knowledge as they were
-            put_back(f)
+            with open(f) as fh:
+                now = fh.read()
+            with open(f, "w") as fh:
+                fh.write(merged(before[f], now))  # its deletions undone; entries added since kept
+            failed.add(f)
             restore(KNOWLEDGE, knowledge)
             return f"{name}: failed, memory and knowledge put back: {why[-200:]}"
         return f"{name}: {(r.stdout or r.stderr).strip().splitlines()[-1:] or ''}"
@@ -703,12 +734,15 @@ def prune(material, files=None):
         with open(f, "w") as fh:
             fh.write(before[f])
 
+    failed = set()
     said = [one(f) for f in files]                # one at a time: two files can feed one subject
     undone = []
     for f in files:
-        if not trimmed(before[f], open(f).read()):   # it added or reworded: not allowed
+        if f not in failed and not trimmed(before[f], open(f).read()):   # it added or reworded: not allowed
+            kept = keep(f)
             put_back(f)
-            undone.append(os.path.relpath(f, os.path.expanduser("~")))
+            undone.append(f"{os.path.relpath(f, os.path.expanduser('~'))} (what it held is kept at {kept})")
+
     for repo in (home.AGENT, home.PROJECTS):
         mine = [f for f in files if f.startswith(repo + os.sep)]
         changed = [f for f in mine if subprocess.run(

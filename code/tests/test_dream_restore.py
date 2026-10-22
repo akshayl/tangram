@@ -22,6 +22,8 @@ case "$FAKE_MODE" in
   error)  echo "something broke"; exit 1 ;;
   silent) exit 3 ;;
   slow)   sleep 30 ;;
+  chat)   [ -n "$FAKE_MEMORY" ] && printf '# Memory\n\n## Kept\nk\n\n## Said by a chat\nnew fact\n' > "$FAKE_MEMORY"
+          echo "chat's edit" > "$FAKE_DIR/note.md"; exit 1 ;;
 esac
 """
 
@@ -108,6 +110,44 @@ class PruneRestore(Restore):
         self.unchanged()
         with open(memory) as fh:
             self.assertEqual(fh.read(), "# Memory\n\n## Fact\nkept\n")
+
+
+class SomeoneElsesEdit(Restore):
+    """A chat writes while a night job runs, then the job fails. Its put-back
+    can't tell whose edit is whose, so nothing it replaces may be lost."""
+
+    def setUp(self):
+        super().setUp()
+        self.saved_kept = dream.KEPT
+        dream.KEPT = os.path.join(self.tmp, "kept")
+
+    def tearDown(self):
+        dream.KEPT = self.saved_kept
+        super().tearDown()
+
+    def test_put_back_keeps_what_it_replaced(self):
+        self.run_mode("chat")
+        self.unchanged()
+        kept = [os.path.join(r, n) for r, _, ns in os.walk(dream.KEPT) for n in ns]
+        self.assertTrue(any(open(k).read() == "chat's edit\n" for k in kept), kept)
+
+    def test_memory_keeps_entries_added_meanwhile(self):
+        memory = os.path.join(self.tmp, "MEMORY.md")
+        with open(memory, "w") as fh:
+            fh.write("# Memory\n\n## Gone\ng\n\n## Kept\nk\n")
+        os.environ["FAKE_MEMORY"] = memory
+        saved = dream.KNOWLEDGE, dream.HOME, dream.build_index, dream.commit
+        dream.KNOWLEDGE, dream.HOME = self.folder, self.tmp
+        dream.build_index, dream.commit = (lambda: None), (lambda *a: None)
+        os.environ["FAKE_MODE"] = "chat"
+        try:
+            dream.prune(self.tmp, files=[memory])
+        finally:
+            dream.KNOWLEDGE, dream.HOME, dream.build_index, dream.commit = saved
+            del os.environ["FAKE_MEMORY"]
+        text = open(memory).read()
+        self.assertIn("## Gone", text)            # the failed run's deletion undone
+        self.assertIn("## Said by a chat", text)  # the chat's fact kept
 
 
 class WholeEntries(unittest.TestCase):

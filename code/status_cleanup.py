@@ -125,10 +125,15 @@ def clean(folder, material, since, until):
     except subprocess.TimeoutExpired:
         failed = "timed out"
     if failed:
+        kept = []
         for f, text in before.items():
-            with open(f, "w") as fh:
-                fh.write(text)
-        return name, f"failed, files put back: {failed}"
+            if open(f).read() != text:
+                kept.append(dream.keep(f))        # it may hold a chat's edit, not only the failed run's
+                with open(f, "w") as fh:
+                    fh.write(text)
+        note = f"; what they held is kept at {os.path.dirname(kept[0])}" if kept else ""
+        return name, f"failed, files put back{note}: {failed}"
+
     changed = [f for f in files if open(f).read() != before[f]]
     if changed:
         subprocess.run(["git", "-C", folder, "commit", "-q", "-m",
