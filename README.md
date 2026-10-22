@@ -16,7 +16,7 @@ Everything runs on your Mac, and only while it's awake.
 Paste this into Claude Code once:
 
 ```text
-Install Tangram for me: read https://github.com/akshayl/tangram/blob/main/SETUP.md
+Install Tangram for me: read https://github.com/akshayl/tangram/blob/main/DESIGN.md
 and follow it to build my own personal agent, stopping whenever you need me.
 If anything goes wrong, offer to write it up as a "Tangram feedback" email
 for me to send.
