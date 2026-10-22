@@ -250,11 +250,17 @@ def transcript_chunks(path):
     285 MB and the least worth recalling. Only the human's words and the agent's
     replies come through, paired so a question keeps its answer.
 
-    `"since": "YYYY-MM-DD"` in `recall.json` leaves out anything said before
-    that day: setup asks whether past Claude Code conversations come in, or
-    only conversations from the day the agent was made."""
+    `"since"` in `recall.json` is setup's answer to whether past conversations
+    come in: when set, only conversations with the agent count — in its own
+    folder or a project's, from that moment on. It is a UTC time,
+    `YYYY-MM-DDTHH:MM:SSZ`, so a chat from earlier on setup day stays out; a
+    bare date, as older setups wrote, counts that whole day."""
     said, commands = [], command_texts()
     since = config().get("since") or ""
+    if since and project_of(os.path.basename(os.path.dirname(path))) != _AGENT \
+            and not os.path.basename(os.path.dirname(path)).lstrip("-").startswith(_dashed(home.PROJECTS) + "-"):
+        return []                             # a conversation elsewhere on the Mac, not with the agent
+    cut = 10 if len(since) == 10 else 19      # a date, or a time to the second
     with open(path, errors="replace") as fh:
         for line in fh:
             try:
@@ -263,7 +269,7 @@ def transcript_chunks(path):
                 continue
             if row.get("type") not in ("user", "assistant"):
                 continue
-            if since and (row.get("timestamp") or "")[:10] < since:
+            if since and (row.get("timestamp") or "")[:cut] < since[:cut]:
                 continue
             content = (row.get("message") or {}).get("content")
             text = ""

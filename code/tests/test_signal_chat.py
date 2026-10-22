@@ -49,12 +49,17 @@ class Stub:
         Stub.told.append(text)
 
 
+REAL_SLEEP = __import__("time").sleep               # put back after a test stubs it out
+SINK = tempfile.mkdtemp()                            # where finished tests' threads write
+
+
 class Base(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        self.saved = {k: getattr(s, k) for k in ("rpc", "config", "Session", "RUNS", "INBOX", "STATE")}
+        self.saved = {k: getattr(s, k) for k in ("rpc", "config", "Session", "RUNS", "INBOX", "OUTBOX", "STATE")}
         s.RUNS = self.tmp.name
         s.INBOX, s.STATE = os.path.join(s.RUNS, "inbox"), os.path.join(s.RUNS, "threads.json")
+        s.OUTBOX = os.path.join(s.RUNS, "outbox")
         s.config = lambda: CFG
         self.fail_sends, self.calls = 0, []
 
@@ -76,6 +81,10 @@ class Base(unittest.TestCase):
         # Workers are daemon threads that outlive their test; their typing
         # loop would otherwise reach the real rpc, and through it a real daemon.
         s.rpc = lambda method, **p: None
+        # Nor may they write to the real runs folder: a send that fails there
+        # keeps its reply in the real outbox, for the live listener to send.
+        s.RUNS = SINK
+        s.INBOX, s.OUTBOX, s.STATE = (os.path.join(SINK, n) for n in ("inbox", "outbox", "threads.json"))
         self.tmp.cleanup()
 
     def sends(self):
@@ -124,7 +133,7 @@ class Sending(Base):
     def setUp(self):
         super().setUp()
         s.time.sleep = lambda x: None
-        self.addCleanup(setattr, s.time, "sleep", __import__("time").sleep)
+        self.addCleanup(setattr, s.time, "sleep", REAL_SLEEP)
 
     def test_retried_once_then_given_up(self):
         self.fail_sends = 1
@@ -159,9 +168,25 @@ class Worker(Base):
         self.fail_sends = 2
         self.say("lost")
         self.say("second")
-        settle()
-        self.assertIn("didn't go through", self.sends()[-2])
+        for _ in range(30):                          # each failed reply is written to disk first
+            if self.sends()[-1:] == ["second"]:
+                break
+            settle()
+        self.assertIn("didn't go through", self.sends()[-2], self.sends())
         self.assertEqual(self.sends()[-1], "second")
+
+    def test_unsent_reply_survives_a_restart(self):
+        s.keep_unsent(DM, ["from before the restart"])     # a listener that died with it unsent
+        self.start()
+        self.message("hi")
+        settle()
+        self.say("new")
+        for _ in range(30):
+            if self.sends()[-1:] == ["new"]:
+                break
+            settle()
+        self.assertIn("from before the restart", self.sends()[-2])
+        self.assertEqual(s.unsent(DM), [])
 
     def test_inbox_copy_kept_until_answered(self):
         self.start()

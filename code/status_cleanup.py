@@ -121,7 +121,7 @@ def clean(folder, material, since, until):
     try:
         r = subprocess.run(cmd, capture_output=True, text=True, cwd=folder, env=signal_chat.env(),
                            stdin=subprocess.DEVNULL, timeout=1800)
-        failed = r.returncode and (r.stdout.strip() or r.stderr)[-200:]
+        failed = r.returncode and (r.stdout.strip() or r.stderr.strip() or f"exit {r.returncode}, no output")[-200:]
     except subprocess.TimeoutExpired:
         failed = "timed out"
     if failed:

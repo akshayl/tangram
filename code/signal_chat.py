@@ -283,6 +283,28 @@ def held(path):
         return json.load(fh)
 
 
+OUTBOX = os.path.join(RUNS, "outbox")
+
+
+def unsent(topic):
+    """Replies that didn't get through, kept on disk so a restart doesn't lose
+    them: the message they answer is retired once its reply is written, here or
+    sent."""
+    try:
+        with open(os.path.join(OUTBOX, topic.replace(":", "_") + ".json")) as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return []
+
+
+def keep_unsent(topic, texts):
+    os.makedirs(OUTBOX, exist_ok=True)
+    path = os.path.join(OUTBOX, topic.replace(":", "_") + ".json")
+    with open(path + ".tmp", "w") as fh:
+        json.dump(texts, fh, ensure_ascii=False)
+    os.replace(path + ".tmp", path)
+
+
 def answered(paths):
     for path in paths:
         try:
@@ -497,7 +519,7 @@ def worker(topic, spec, inbox):
     to, folder = address(spec), os.path.expanduser(spec["folder"])
     session = Session(topic, folder, inbox)
     busy, quiet = threading.Event(), threading.Event()  # quiet: a note's turn, never shown
-    quote, spoke, last, missed, notes = None, False, time.time(), [], []
+    quote, spoke, last, missed, notes = None, False, time.time(), unsent(topic), []
     turn = []                                        # inbox files the turn under way answers
 
     def typing():                                    # an indicator lasts 15s
@@ -523,21 +545,28 @@ def worker(topic, spec, inbox):
     threading.Thread(target=typing, daemon=True).start()
     threading.Thread(target=keep_warm, daemon=True).start()
 
-    def say(text):
-        nonlocal quote, spoke
+    def catch_up():                                  # replies that failed, sent before anything new
         if missed and send(topic, "One of my earlier replies didn't go through. Here it is:\n\n"
                            + "\n\n".join(missed)):
             missed.clear()
+            keep_unsent(topic, missed)
+
+    def say(text):
+        nonlocal quote, spoke
+        catch_up()
         if send(topic, text, quote=quote):
             print(f"[{topic}] -> {text[:90]}", flush=True)
         else:
-            missed.append(text)                      # owned up to in the next one that lands
+            missed.append(text)                      # on disk, so the message it answers can go
+            keep_unsent(topic, missed)
         quote, spoke = None, True                    # quote only the first reply
 
     while True:
         try:
             kind, *item = inbox.get(timeout=60)
         except queue.Empty:
+            if not busy.is_set():
+                catch_up()                           # retried each quiet minute, not only on the next reply
             if busy.is_set() and time.time() - last > PATIENCE:
                 busy.clear()                         # so "died" doesn't report it twice
                 session.kill()

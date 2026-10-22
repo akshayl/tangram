@@ -401,16 +401,56 @@ def settings(material, name, writable=None):
     return path
 
 
+def snapshot(folder):
+    """Every file under folder, as it is on disk now."""
+    snap = {}
+    for root, dirs, names in os.walk(folder):
+        dirs[:] = [d for d in dirs if d != ".git"]
+        for n in names:
+            p = os.path.join(root, n)
+            with open(p, "rb") as fh:
+                snap[p] = fh.read()
+    return snap
+
+
+def restore(folder, snap):
+    """Put folder back to snap: files it made go, files it changed or removed
+    come back. A failed session leaves nothing behind."""
+    for p in set(snapshot(folder)) - set(snap):
+        os.remove(p)
+    for p, data in snap.items():
+        try:
+            with open(p, "rb") as fh:
+                if fh.read() == data:
+                    continue
+        except OSError:
+            os.makedirs(os.path.dirname(p), exist_ok=True)
+        with open(p, "wb") as fh:
+            fh.write(data)
+
+
 def claude(prompt, material, name, writable=None, timeout=1800):
+    """One fenced session. If it fails or runs out of time, what it may write is
+    put back as it was on disk before it started, so no half-done edit stays."""
     cmd = [CLAUDE, "-p", prompt, "--model", MODEL, "--permission-mode", "dontAsk",
            "--settings", settings(material, name, writable), "--add-dir", material,
            "--no-session-persistence"]            # a dream is not a conversation to recall
     if writable:
         cmd += ["--add-dir", writable]
-    r = subprocess.run(cmd, capture_output=True, text=True, cwd=HOME, env=signal_chat.env(),
-                       stdin=subprocess.DEVNULL, timeout=timeout)
+    before = snapshot(writable) if writable else None
+    try:
+        r = subprocess.run(cmd, capture_output=True, text=True, cwd=HOME, env=signal_chat.env(),
+                           stdin=subprocess.DEVNULL, timeout=timeout)
+    except subprocess.TimeoutExpired:
+        if writable:
+            restore(writable, before)
+        raise RuntimeError(f"{name}: timed out after {timeout} s; its writes put back")
     if r.returncode:
-        raise RuntimeError(f"{name}: {(r.stdout.strip() or r.stderr)[-300:]}")   # stderr carries warnings; the cause is in stdout
+        if writable:
+            restore(writable, before)
+        # stderr carries warnings; the cause is usually in stdout
+        why = r.stdout.strip() or r.stderr.strip() or f"exit {r.returncode}, no output"
+        raise RuntimeError(f"{name}: {why[-300:]}; its writes put back")
     return (r.stdout or "").strip()
 
 
@@ -479,6 +519,8 @@ def rewrite(item, material, today=None):
     try:
         reply = claude(prompt, material, f"write-{subject}", writable=folder)
     except Exception as e:
+        if not os.listdir(folder):
+            os.rmdir(folder)
         return subject, f"failed: {e}"
     if not os.listdir(folder):
         os.rmdir(folder)                          # nothing durable after all
@@ -606,10 +648,23 @@ def memories():
                   glob.glob(os.path.join(home.PROJECTS, "*", "MEMORY.md")))
 
 
+def entries(text):
+    """A memory file's header, and its entries: each `##` heading with what
+    follows it up to the next."""
+    head, *rest = re.split(r"(?m)^(?=## )", text)
+    return head.strip(), [e.strip() for e in rest]
+
+
 def trimmed(before, after):
-    """True if after is before with whole lines removed, and nothing added or changed."""
-    left = iter(before.splitlines())
-    return all(line in left for line in after.splitlines())
+    """True if after is before with whole entries removed, the header untouched,
+    and nothing added, reworded or cut from inside an entry (a
+    line-by-line check let part of an entry go)."""
+    (hb, eb), (ha, ea) = entries(before), entries(after)
+    left = iter(eb)
+    return hb == ha and all(e in left for e in ea)
+
+
+PRUNE_TIMEOUT = 3000       # seconds one memory file's session may take
 
 
 def prune(material, files=None):
@@ -630,12 +685,18 @@ def prune(material, files=None):
         cmd = [CLAUDE, "-p", PRUNE.format(knowledge=KNOWLEDGE, file=f, today=time.strftime("%Y-%m-%d")),
                "--model", MODEL, "--permission-mode", "dontAsk", "--settings", path,
                "--no-session-persistence", "--add-dir", KNOWLEDGE, "--add-dir", os.path.dirname(f)]
-        r = subprocess.run(cmd, capture_output=True, text=True, cwd=HOME, env=signal_chat.env(),
-                           stdin=subprocess.DEVNULL, timeout=3000)
         name = os.path.relpath(f, os.path.expanduser('~'))
-        if r.returncode:                          # failed partway: keep every entry in memory
+        knowledge = snapshot(KNOWLEDGE)
+        try:
+            r = subprocess.run(cmd, capture_output=True, text=True, cwd=HOME, env=signal_chat.env(),
+                               stdin=subprocess.DEVNULL, timeout=PRUNE_TIMEOUT)
+            why = r.returncode and (r.stdout.strip() or r.stderr.strip() or f"exit {r.returncode}, no output")
+        except subprocess.TimeoutExpired:
+            why = "timed out"
+        if why:                                   # failed partway: memory and knowledge as they were
             put_back(f)
-            return f"{name}: failed, memory put back: {(r.stdout or r.stderr).strip()[-200:]}"
+            restore(KNOWLEDGE, knowledge)
+            return f"{name}: failed, memory and knowledge put back: {why[-200:]}"
         return f"{name}: {(r.stdout or r.stderr).strip().splitlines()[-1:] or ''}"
 
     def put_back(f):
