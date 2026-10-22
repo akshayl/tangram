@@ -107,7 +107,7 @@ They're written for Claude Code on a Mac, the implementation that has been built
 2. Build the index: `code/.venv/bin/python code/recall.py index`. The first build downloads a small search model and can take a while if there's a lot of history — tell them roughly how long as it goes.
 3. Fill and load `code/launchd/tangram.recall.plist` as in Step 2.
 4. Add the hook to `~/.claude/settings.json`, keeping everything already there: a `UserPromptSubmit` hook running `<agent folder>/code/.venv/bin/python <agent folder>/code/hook.py`. Explain: it runs for every Claude Code session, but does nothing outside the agent's own folders.
-5. The nightly dream and its weekly tidy are already in `schedule.json` from Step 3.
+5. The nightly status cleanup and dream, and the weekly source check and knowledge review, are already in `schedule.json` from Step 3.
 
 **Check:** `curl -s http://127.0.0.1:7585/health` (or the port you chose) answers; a test search (`code/.venv/bin/python code/recall.py search "<their name>"`) returns passages.
 

@@ -225,7 +225,8 @@ def redact(text):
 
 AUTOMATED = ("You are dreaming:", "You keep the knowledge about", "You are reviewing tonight",
              "Below is the knowledge index", "You are finding every subject",
-             "You are tidying the whole knowledge", "Answer from what you know")
+             "You are tidying the whole knowledge", "You are reviewing the whole knowledge",
+             "You are doing the nightly status cleanup", "Answer from what you know")
 
 
 def command_texts():

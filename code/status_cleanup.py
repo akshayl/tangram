@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Housekeeping: each folder's STATUS.md and TODO.md made true again, nightly.
+"""Status cleanup: each folder's STATUS.md and TODO.md made true again, nightly.
 
 `/save` asks a session to prune its status, but a session that never saves
 leaves it as it was, and one that saves often only rewrites the top block: in
@@ -8,7 +8,7 @@ old before anyone noticed. So each night, before the dream, a fresh session per
 folder that saw activity reads the day — every conversation, every commit — and
 brings the two files up to date: what is no longer true comes out, facts that
 changed are corrected, finished to-dos are deleted. A separate step, run to
-completion before the dream starts, so the dream reads tidy files.
+completion before the dream starts, so the dream reads current files.
 
 **It can write only those two files.** Each session runs in `dontAsk` mode with
 Edit allowed on that folder's `STATUS.md` and `TODO.md`, Bash denied. A stale
@@ -16,10 +16,10 @@ line in a `CLAUDE.md` is a defining file's business, so it is reported, never
 edited. A session that fails puts both files back as they were on disk when it
 started — not git's copy, which would lose anything written and not committed.
 
-    python3 housekeeping.py                 every folder active since the last run
-    python3 housekeeping.py --only DIR      one folder, whatever its activity
-    python3 housekeeping.py --days N        look back N days instead
-    python3 housekeeping.py --dry           list the folders it would visit; write nothing
+    python3 status_cleanup.py                 every folder active since the last run
+    python3 status_cleanup.py --only DIR      one folder, whatever its activity
+    python3 status_cleanup.py --days N        look back N days instead
+    python3 status_cleanup.py --dry           list the folders it would visit; write nothing
 """
 import glob
 import json
@@ -34,12 +34,12 @@ import dream
 import home
 import signal_chat
 
-RUNS = os.path.join(home.RUNS, "housekeeping")
+RUNS = os.path.join(home.RUNS, "status-cleanup")
 STATE = os.path.join(RUNS, "state.json")
 TO = dream.TO
 AT_ONCE = 3
 
-KEEP = """You are doing housekeeping in {folder}: making its STATUS.md and TODO.md
+KEEP = """You are doing the nightly status cleanup in {folder}: making its STATUS.md and TODO.md
 true again. Sessions are meant to keep them current and often don't; tonight
 you catch what they missed.
 
@@ -66,7 +66,7 @@ session starting cold need it to act? Edit only STATUS.md and TODO.md in
 2. Correct facts that changed, citing where you saw it in brackets.
 3. If a session worked on this folder after the Resume Here block was last
    written and didn't update it, rewrite the block from what happened, and
-   end it "(written by housekeeping from the transcript)".
+   end it "(written by the status cleanup from the transcript)".
 4. Delete finished to-dos; add none — new work is decided by people.
 5. Rewrite a section whole when it changes; never wedge a line into the
    middle of one. Where you keep text, keep its wording.
@@ -102,7 +102,7 @@ def active(folder, material, since):
     return folder.replace(home, "~") + "/" in said or folder + "/" in said
 
 
-def tidy(folder, material, since, until):
+def clean(folder, material, since, until):
     files = [os.path.join(folder, f) for f in ("STATUS.md", "TODO.md")]
     files = [f for f in files if os.path.exists(f)]
     before = {f: open(f).read() for f in files}
@@ -132,7 +132,7 @@ def tidy(folder, material, since, until):
     changed = [f for f in files if open(f).read() != before[f]]
     if changed:
         subprocess.run(["git", "-C", folder, "commit", "-q", "-m",
-                        f"Housekeeping: {name} made current", "--"] + changed)
+                        f"Status cleanup: {name} made current", "--"] + changed)
     return name, r.stdout.strip() or "(no reply)"
 
 
@@ -153,7 +153,7 @@ def run(only=None, days=None, dry=False):
         print("\n".join(todo) or "(no folder active)")
         return
     with ThreadPoolExecutor(AT_ONCE) as pool:
-        results = list(pool.map(lambda f: tidy(f, material, since, until), todo))
+        results = list(pool.map(lambda f: clean(f, material, since, until), todo))
     for name, said in results:
         print(f"{name}: {said}", flush=True)
     if only or days:
@@ -165,10 +165,10 @@ def run(only=None, days=None, dry=False):
             json.dump(state, fh)
     changed = [(n, s) for n, s in results if not s.lower().startswith("nothing stale")]
     if changed:
-        signal_chat.send(TO, "🧹 **Last night's housekeeping**\n\n" +
+        signal_chat.send(TO, "🧹 **Last night's status cleanup**\n\n" +
                          "\n\n".join(f"**{n}**: {s}" for n, s in changed))
     if failed:
-        raise SystemExit(f"housekeeping failed for: {', '.join(failed)}")
+        raise SystemExit(f"status cleanup failed for: {', '.join(failed)}")
 
 
 if __name__ == "__main__":

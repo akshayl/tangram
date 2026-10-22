@@ -29,7 +29,7 @@ rules are what agents act on, and a bad dream must not change behaviour.
 The knowledge is the agent's to run, end to end; the user never hears about
 subjects.
 
-    python3 dream.py             housekeeping (housekeeping.py), then dream over
+    python3 dream.py             the status cleanup (status_cleanup.py), then dream over
                                  everything since the last dream, then push
                                  to GitHub if the repos have a copy there
     python3 dream.py --now       don't wait for the Mac to be idle (30 min untouched)
@@ -41,8 +41,8 @@ subjects.
     python3 dream.py --prune     remove from memory what knowledge now holds
     python3 dream.py --sweep A B every concrete detail said between dates A and B,
                                  made sure of in knowledge
-    python3 dream.py --audit     ten random notes checked claim by claim against their sources
-    python3 dream.py --tidy      the weekly pass: stale subjects rewritten, then the
+    python3 dream.py --source-check  ten random notes checked claim by claim against their sources
+    python3 dream.py --review    the weekly knowledge review: stale subjects rewritten, then the
                                  whole folder checked for duplicates and contradictions
 """
 import calendar
@@ -181,7 +181,8 @@ Rules:
 - Nothing from what an agent should *do*: rules live elsewhere. To-dos live in
   TODO.md files; a note never holds a to-do list.
 - If {user} corrected a claim and it isn't settled, keep the note but add a line
-  `Disputed: <what they said, date>` under Last confirmed.
+  `Disputed: <what they said, date>` under Last confirmed. A `Disputed:` line
+  already there that the sources settle: correct the claim and remove the line.
 - Keep the specifics: exact numbers, names, dates, addresses, models, prices —
   "the boat's mooring fee is $85 a month", not "a mooring fee". A note that
   says a thing exists without saying what it is answers nothing.
@@ -200,7 +201,7 @@ Rules:
 
 Reply in one line: what changed, e.g. "3 notes added, 1 updated, summary rewritten"."""
 
-TIDY = """You are tidying the whole knowledge folder, {knowledge}, once a week.
+REVIEW = """You are reviewing the whole knowledge folder, {knowledge}, once a week.
 Nightly rewrites look at one subject at a time; this looks across all of them.
 Read index.md, every summary.md, and the notes.
 
@@ -294,7 +295,7 @@ def iso(t):
 _NOISE = re.compile(r"<system-reminder>.*?</system-reminder>|<task-notification>.*?</task-notification>", re.S)
 _OURS = ("You are dreaming:", "You keep the knowledge about", "You are reviewing tonight",
          "Below is the knowledge index", "You are finding every subject",
-         "You are tidying the whole knowledge")
+         "You are reviewing the whole knowledge")
 
 
 def said(content):
@@ -577,7 +578,7 @@ def push():
     """Push what the night committed, so the GitHub copy holds it by morning.
     Only repos that have one: the copy is optional, and without a remote there is
     nothing to do. Durability otherwise rests on a session saving, and
-    housekeeping and the dream commit with nobody there. Never forced: if GitHub
+    the status cleanup and the dream commit with nobody there. Never forced: if GitHub
     has commits this Mac lacks — a session elsewhere pushed — say so and leave it."""
     failed = []
     for repo in REPOS:
@@ -659,9 +660,9 @@ def prune(material, files=None):
     return "\n".join(said) + (f"\nput back (changed, not just trimmed): {', '.join(undone)}" if undone else "")
 
 
-def tidy():
+def review():
     """Stale subjects rewritten from all history, then one look across everything."""
-    material = os.path.join(RUNS, "tidy-" + time.strftime("%Y-%m-%d-%H%M"))
+    material = os.path.join(RUNS, "review-" + time.strftime("%Y-%m-%d-%H%M"))
     os.makedirs(material, exist_ok=True)
     stale = []
     for summary in glob.glob(os.path.join(KNOWLEDGE, "*", "summary.md")):
@@ -683,14 +684,14 @@ def tidy():
     rel = lambda p: os.path.relpath(p, KNOWLEDGE)
     twins = "; ".join(f"{rel(a)} ~ {rel(b)}" for a, b in h["twins"]) or "none"
     long_ = ", ".join(rel(p) for p in h["long"]) or "none"
-    reply = claude(TIDY.format(knowledge=KNOWLEDGE, grain=GRAIN, twins=twins, long=long_,
-                               user=home.USER, projects=home.PROJECTS), material, "tidy",
+    reply = claude(REVIEW.format(knowledge=KNOWLEDGE, grain=GRAIN, twins=twins, long=long_,
+                               user=home.USER, projects=home.PROJECTS), material, "review",
                    writable=KNOWLEDGE, timeout=3000)
     build_index()
-    commit(f"weekly tidy — {len(stale)} stale subject(s) rewritten; {reply.splitlines()[0][:80]}")
+    commit(f"knowledge review — {len(stale)} stale subject(s) rewritten; {reply.splitlines()[0][:80]}")
     question = next((l[9:].strip() for l in reply.splitlines() if l.startswith("QUESTION:")), "")
     if question:
-        signal_chat.send(TO, f"🌙 **From the weekly knowledge tidy**\n\n{question}")
+        signal_chat.send(TO, f"🌙 **From the weekly knowledge review**\n\n{question}")
     print("; ".join(f"{s}: {r}" for s, r in results))
     print(reply)
 
@@ -720,7 +721,7 @@ that only mattered in the moment. Write only inside {knowledge}.
 
 Reply in one line: details found, already known, added (and to which notes)."""
 
-AUDIT = """You are checking whether knowledge is right. Below are knowledge notes
+SOURCE_CHECK = """You are checking whether knowledge is right. Below are knowledge notes
 picked at random. For each, check every claim against the source it cites —
 the file, the session log, the commit (git -C is not available; read the files),
 or the conversation transcript in {transcripts} (Grep it). Sources are in
@@ -740,7 +741,7 @@ Reply with only JSON:
 NOTES:
 {notes}"""
 
-AUDIT_ALERT = 0.10         # tell the user if more than this share of claims is wrong
+SOURCE_ALERT = 0.10        # above this share wrong, the dream itself needs looking at
 LOCK = os.path.join(RUNS, "lock")
 IDLE = 30 * 60             # untouched this long, the Mac is nobody's but the dream's
 
@@ -754,7 +755,7 @@ CHUNK = 400_000            # characters of conversation a replay window may hold
 
 
 def locked():
-    """One dream at a time: the nightly run, the tidy and a replay all rewrite
+    """One dream at a time: the nightly run, the review and a replay all rewrite
     the same folders. A second one waits for the first."""
     import fcntl
     os.makedirs(RUNS, exist_ok=True)
@@ -852,25 +853,39 @@ def sweep(start, end):
         since = until
 
 
-def audit(n=10):
+def source_check(n=10):
     """Is knowledge right? n random notes checked claim by claim against their
-    sources; errors marked disputed for the tidy to fix; the rate logged."""
+    sources; errors marked disputed, and their subjects rewritten from sources at
+    once; the rate logged. Nothing goes to the user: there is nothing for them to
+    do. A high rate means the dream writes badly, which is the agent's to fix, so
+    it goes on the agent's TODO for its next session."""
     import random
     notes = [p for p in glob.glob(os.path.join(KNOWLEDGE, "*", "*.md")) if not p.endswith("summary.md")]
     pick = random.sample(notes, min(n, len(notes)))
-    material = os.path.join(RUNS, "audit-" + time.strftime("%Y-%m-%d-%H%M"))
+    material = os.path.join(RUNS, "source-check-" + time.strftime("%Y-%m-%d-%H%M"))
     os.makedirs(material, exist_ok=True)
-    reply = claude(AUDIT.format(notes="\n".join(pick), transcripts=TRANSCRIPTS), material, "audit", writable=KNOWLEDGE, timeout=3000)
+    reply = claude(SOURCE_CHECK.format(notes="\n".join(pick), transcripts=TRANSCRIPTS), material, "source-check", writable=KNOWLEDGE, timeout=3000)
     m = re.search(r"\{.*\}", reply, re.S)
     rows = json.loads(m.group(0))["notes"] if m else []
     total = {k: sum(r.get(k, 0) for r in rows) for k in ("claims", "right", "wrong", "unsupported", "superseded")}
-    with open(os.path.join(RUNS, "audit.jsonl"), "a") as fh:
+    with open(os.path.join(RUNS, "source-check.jsonl"), "a") as fh:
         fh.write(json.dumps({"at": stamp(time.time()), **total, "notes": rows}) + "\n")
-    commit(f"audit: {total['wrong']} wrong, {total['superseded']} superseded of {total['claims']} claims marked disputed")
+    commit(f"source check: {total['wrong']} wrong, {total['superseded']} superseded of {total['claims']} claims marked disputed")
     bad = total["wrong"] + total["superseded"]
-    if total["claims"] and bad / total["claims"] > AUDIT_ALERT:
-        signal_chat.send(TO, f"🔎 **Knowledge audit:** {bad} of {total['claims']} claims checked were wrong "
-                             f"or out of date. Marked disputed; the tidy fixes them.")
+    subjects = sorted({os.path.basename(os.path.dirname(r["note"])) for r in rows
+                       if r.get("wrong") or r.get("superseded")})
+    if subjects:
+        with ThreadPoolExecutor(AT_ONCE) as pool:
+            list(pool.map(lambda s: rewrite({"subject": s, "about": s}, material), subjects))
+        build_index()
+        commit(f"source check: {', '.join(subjects)} rewritten to settle what it disputed")
+    if total["claims"] and bad / total["claims"] > SOURCE_ALERT:
+        todo = os.path.join(home.AGENT, "TODO.md")
+        with open(todo, "a") as fh:
+            fh.write(f"\n- **The weekly source check found {bad} of {total['claims']} claims wrong or out of date** "
+                     f"({time.strftime('%Y-%m-%d')}, `runs/dream/source-check.jsonl`). Find what the dream gets wrong "
+                     f"and fix its instructions.\n")
+        subprocess.run(["git", "-C", home.AGENT, "commit", "-q", "-m", "TODO: the source check's error rate is high", "--", todo])
     print(f"{total['claims']} claims in {len(rows)} notes: {total['right']} right, {total['wrong']} wrong, "
           f"{total['superseded']} superseded, {total['unsupported']} unsupported")
     for r in rows:
@@ -913,7 +928,7 @@ def backfill():
 
 if __name__ == "__main__":
     recall.load()
-    # The nightly run and the tidy wait for a quiet Mac. Hardly anyone writes
+    # The nightly run and the review wait for a quiet Mac. Hardly anyone writes
     # between 2 and 6am, so 03:30 is normally idle; a night the Mac slept, the
     # scheduler runs it late, and it should not start the moment the user opens
     # the laptop. Exiting non-zero hands it back to the
@@ -931,24 +946,24 @@ if __name__ == "__main__":
         elif "--sweep" in sys.argv:
             i = sys.argv.index("--sweep")
             sweep(sys.argv[i + 1], sys.argv[i + 2])
-        elif "--audit" in sys.argv:
-            audit()
+        elif "--source-check" in sys.argv or "--audit" in sys.argv:   # --audit: its old name
+            source_check()
         elif "--prune" in sys.argv:
             m = os.path.join(RUNS, "prune-" + time.strftime("%Y-%m-%d-%H%M"))
             os.makedirs(m, exist_ok=True)
             print(prune(m))
-        elif "--tidy" in sys.argv:
-            tidy()
+        elif "--review" in sys.argv or "--tidy" in sys.argv:          # --tidy: its old name
+            review()
         else:
             if "--dry" not in sys.argv:
-                # Housekeeping first, to the end, so the dream reads tidy status
+                # The status cleanup first, to the end, so the dream reads current status
                 # files. Its failure doesn't stop the dream: the day still has
                 # to reach knowledge.
-                import housekeeping
+                import status_cleanup
                 try:
-                    housekeeping.run()
+                    status_cleanup.run()
                 except BaseException as e:
-                    print(f"housekeeping failed: {e}", flush=True)
+                    print(f"status cleanup failed: {e}", flush=True)
             try:
                 nightly(dry="--dry" in sys.argv)
             finally:

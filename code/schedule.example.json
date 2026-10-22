@@ -7,22 +7,22 @@
       "run": ["~/agent/code/.venv/bin/python3", "~/agent/code/watch.py"]
     },
     {
-      "name": "knowledge-audit",
+      "name": "source-check",
       "at": ["00:15"],
       "days": ["sun"],
       "timeout": 3600,
       "retries": 16,
       "retry_after": 1800,
-      "run": ["~/agent/code/.venv/bin/python3", "~/agent/code/dream.py", "--audit"]
+      "run": ["~/agent/code/.venv/bin/python3", "~/agent/code/dream.py", "--source-check"]
     },
     {
-      "name": "knowledge-tidy",
+      "name": "knowledge-review",
       "at": ["01:00"],
       "days": ["sun"],
       "timeout": 9000,
       "retries": 16,
       "retry_after": 1800,
-      "run": ["~/agent/code/.venv/bin/python3", "~/agent/code/dream.py", "--tidy"]
+      "run": ["~/agent/code/.venv/bin/python3", "~/agent/code/dream.py", "--review"]
     },
     {
       "name": "dream",

@@ -50,7 +50,7 @@ The agent's own number, so it can start a conversation — a reminder, a finishe
 
 ### 4. The Scheduler
 
-One resident process and a table, `schedule.json`, of what runs when: a command, or a request in plain words answered by a fresh session and sent to Signal or email. The agent's upkeep — the dream, housekeeping, the weekly tidy — is rows in the same table.
+One resident process and a table, `schedule.json`, of what runs when: a command, or a request in plain words answered by a fresh session and sent to Signal or email. The agent's upkeep — the status cleanup and the dream nightly, the source check and knowledge review weekly — is rows in the same table.
 
 *Must hold:* a job missed while the computer slept runs once on waking, not once per missed slot. A recurring job seen for the first time is recorded, not run, so a new row doesn't fire for a slot that passed before it existed; a one-off runs when it's due. A job that runs past its timeout is stopped with everything it started. A restart of the scheduler doesn't kill running jobs.
 
@@ -72,11 +72,11 @@ Keyword and vector search over everything written and said — files, conversati
 
 *Check:* in a new session, a question about something said in a different conversation is answered without being told where to look.
 
-### 7. Total Recall: Dreaming and Housekeeping
+### 7. Total Recall: Dreaming, and Its Upkeep
 
-Each night, once the computer has been idle for half an hour: housekeeping first, to the end, then the dream. If housekeeping fails, the dream still runs, because the day still has to reach knowledge. Housekeeping brings every active folder's `STATUS.md` and `TODO.md` up to date from the day. The dream rewrites knowledge by subject from the day — small notes, each claim citing its source, and a summary per subject — then empties memory into it.
+Each night, once the computer has been idle for half an hour: the status cleanup first, to the end, then the dream. If the status cleanup fails, the dream still runs, because the day still has to reach knowledge. The status cleanup brings every active folder's `STATUS.md` and `TODO.md` up to date from the day. The dream rewrites knowledge by subject from the day — small notes, each claim citing its source, and a summary per subject — then empties memory into it. Weekly, the source check takes ten random notes and checks every claim against its source; a subject with a wrong claim is rewritten from its sources at once. The knowledge review rewrites any subject unedited for two weeks, since the dream only reaches subjects that came up, and reads the whole folder for duplicates and contradictions the dream can't see one subject at a time.
 
-*Must hold:* each of these sessions can write only where its job allows — housekeeping only those two files, a subject's rewrite only that subject's folder, memory only by deleting, never adding or rewording — and that limit is enforced, by the coding agent's permissions or by a script that checks and applies what a read-only run proposes, never by the prompt alone. A session that fails puts back what it touched, from the files as they were on disk, not from git. The person's own words outrank any agent's account. Nothing the dream writes changes how the agent behaves.
+*Must hold:* each of these sessions can write only where its job allows — the status cleanup only those two files, a subject's rewrite only that subject's folder, memory only by deleting, never adding or rewording — and that limit is enforced, by the coding agent's permissions or by a script that checks and applies what a read-only run proposes, never by the prompt alone. A session that fails puts back what it touched, from the files as they were on disk, not from git. The person's own words outrank any agent's account. Nothing the dream writes changes how the agent behaves.
 
 *Check:* after a night, `knowledge/` has notes citing that day, memory is shorter, and status files are current. A dream session asked to write outside its folder is refused, by the enforcement rather than by the model choosing not to.
 
@@ -106,7 +106,7 @@ What in `code/` assumes Claude Code or a Mac, so you know what to replace on ano
 | --- | --- | --- |
 | Paths, the agent's executable, where conversations are saved | `home.py` | `claude`, `~/.claude/projects` |
 | Running a chat headless, streaming, resuming | `signal_chat.py` | `claude -p` with stream-json and `--resume` |
-| Restricted unattended runs | `dream.py`, `housekeeping.py` | `--settings` permission files, `dontAsk` |
+| Restricted unattended runs | `dream.py`, `status_cleanup.py` | `--settings` permission files, `dontAsk` |
 | Context before each message | `hook.py`, and the hook entry in settings | `UserPromptSubmit` and its JSON |
 | Reading conversations | `recall.py`, `dream.py`, `sessions.py` | Claude Code's `.jsonl` format |
 | Services that stay running | `code/launchd/`, `watch.py` | launchd, `launchctl` |
