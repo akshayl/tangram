@@ -27,7 +27,7 @@
     {
       "name": "dream",
       "at": ["03:30"],
-      "timeout": 7200,
+      "timeout": 9000,
       "retries": 16,
       "retry_after": 1800,
       "run": ["~/agent/code/.venv/bin/python3", "~/agent/code/dream.py"]

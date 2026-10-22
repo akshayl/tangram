@@ -29,7 +29,9 @@ rules are what agents act on, and a bad dream must not change behaviour.
 The knowledge is the agent's to run, end to end; the user never hears about
 subjects.
 
-    python3 dream.py             dream over everything since the last dream
+    python3 dream.py             housekeeping (housekeeping.py), then dream over
+                                 everything since the last dream, then push
+                                 to GitHub if the repos have a copy there
     python3 dream.py --now       don't wait for the Mac to be idle (30 min untouched)
     python3 dream.py --dry       gather the material and list the subjects; write nothing
     python3 dream.py --backfill  find every subject in all history and write each once
@@ -129,7 +131,7 @@ Bring the folder up to date. It holds:
 1. `summary.md` — where the subject stands now. Exactly this shape:
    ```
    # <Name> — <what it is, one line>
-   Last confirmed: {today_date} · Related: <other subjects, comma-separated>
+   Last confirmed: <date> · Edited: {today_date} · Related: <other subjects, comma-separated>
 
    <Where it stands, at most 200 words. Every claim followed by its source and
    date in brackets: (house-search STATUS, 10/13), (trip session 9/29),
@@ -142,7 +144,7 @@ Bring the folder up to date. It holds:
    ```
    # <Name>: <the point, stated as a claim>
    <one line: why it matters>
-   Last confirmed: {today_date}
+   Last confirmed: <date> · Edited: {today_date}
 
    <At most 200 words. What is true and why; who decided and what was rejected;
    for a lesson, how the problem shows up, in the words someone would use
@@ -154,10 +156,21 @@ Rules:
   house search includes the mortgage, even though that is filed under money.
   Read the summaries of the Related subjects in {knowledge}, and their projects,
   so "where does it stand" gets the whole answer here.
-- Knowledge, not a log: "the budget is $2M", not "on 9/29 we decided". Newer
-  sources win. Never write a superseded value, not even to say it is old — the
-  old number next to the new one is how a reader picks up the wrong one. Git
-  keeps the history.
+- Knowledge, not a log: "the budget is $2M", not "on 9/29 we decided". Never
+  write a superseded value, not even to say it is old — the old number next to
+  the new one is how a reader picks up the wrong one. Git keeps the history.
+- **Whose word wins.** {user}'s own words — a decision, a correction, a fact
+  about their life — outrank any agent's summary, account or inference,
+  whatever their dates; only a newer word from them, or something observed (a
+  file, a command's output, a commit), replaces theirs. Among sources of equal
+  standing, newer wins. Mark their words in the citation: ({user}, Signal
+  10/17). If an agent's account contradicts their decision and nothing
+  observed settles it, keep theirs and add a Disputed line.
+- **Last confirmed is when a source last showed the claim holds** — {user}
+  saying it, a file or a command's output showing it — never just today.
+  Rewording or reorganising a note is an edit: set Edited, and leave Last
+  confirmed as it was unless tonight's material shows the fact again. A
+  summary's is the date its main claim was last shown.
 - Keep a note that is still true, update one that changed, delete one that no
   longer holds (write it empty: the run removes empty notes). Merge
   duplicates. Don't split one point across notes.
@@ -237,8 +250,8 @@ For each `##` entry:
    specific in the entry — numbers, names, paths, dates, the reason — is in that
    subject's knowledge: add to the note that covers it, or write a new small
    note in that folder (`# <Subject>: <the point>`, a one-line why, `Last
-   confirmed: {today}`, at most 200 words, sources in brackets — cite this memory
-   file), and add it to the subject's `summary.md` Notes list. Then delete the
+   confirmed: <the date the entry gives for the fact, else {today}> · Edited:
+   {today}`, at most 200 words, sources in brackets — cite this memory file), and add it to the subject's `summary.md` Notes list. Then delete the
    whole entry from the memory file.
 
 In the memory file, only ever delete whole entries — never add, reword or move
@@ -246,7 +259,7 @@ text there; a check afterwards puts back any memory file changed another way.
 Leave its header alone. Write knowledge only inside {knowledge}.
 Reply in one line: entries kept, entries moved, notes written or extended."""
 
-STALE = 14 * 86400         # a summary unconfirmed this long is rewritten by the weekly pass
+STALE = 14 * 86400         # a summary unedited this long is rewritten by the weekly pass
 
 REPORT = """You are reviewing tonight's dream. Material from {since} to {until} is in
 {material}; the knowledge notes changed tonight are listed in {changed}.
@@ -560,16 +573,52 @@ def nightly(dry=False):
     print(report)
 
 
+def push():
+    """Push what the night committed, so the GitHub copy holds it by morning.
+    Only repos that have one: the copy is optional, and without a remote there is
+    nothing to do. Durability otherwise rests on a session saving, and
+    housekeeping and the dream commit with nobody there. Never forced: if GitHub
+    has commits this Mac lacks — a session elsewhere pushed — say so and leave it."""
+    failed = []
+    for repo in REPOS:
+        if not subprocess.run(["git", "-C", repo, "remote"], capture_output=True, text=True).stdout.strip():
+            continue
+        try:
+            r = subprocess.run(["git", "-C", repo, "push", "-q"],
+                               capture_output=True, text=True, timeout=300, stdin=subprocess.DEVNULL)
+            if r.returncode and "rejected" in r.stderr:
+                failed.append(f"{repo}: GitHub has commits this Mac doesn't; nothing was overwritten")
+            elif r.returncode:
+                failed.append(f"{repo}: {(r.stderr or r.stdout).strip().splitlines()[-1][-200:]}")
+        except subprocess.TimeoutExpired:
+            failed.append(f"{repo}: timed out")
+    for line in failed:
+        print(f"push failed: {line}", flush=True)
+    if failed:
+        signal_chat.send(TO, "⚠️ **Last night's push to GitHub didn't go through**\n\n" + "\n".join(failed))
+    return failed
+
+
 def memories():
     """The agent's memory, and each project's."""
     return sorted(glob.glob(os.path.join(home.AGENT, "MEMORY.md")) +
                   glob.glob(os.path.join(home.PROJECTS, "*", "MEMORY.md")))
 
 
+def trimmed(before, after):
+    """True if after is before with whole lines removed, and nothing added or changed."""
+    left = iter(before.splitlines())
+    return all(line in left for line in after.splitlines())
+
+
 def prune(material, files=None):
     """Empty each memory file into knowledge, one session per file. In memory,
-    deletions only, checked: a file that gained or reworded a line is put back."""
+    deletions only, checked: a file that gained or reworded a line is put back.
+    Checked against the file as it was on disk when the prune started, not
+    against git: a session may have written a fact and ended without committing,
+    and putting back git's copy would lose it."""
     files = files or memories()
+    before = {f: open(f).read() for f in files}
 
     def one(f):
         path = os.path.join(material, f"settings-prune-{abs(hash(f))}.json")
@@ -582,20 +631,24 @@ def prune(material, files=None):
                "--no-session-persistence", "--add-dir", KNOWLEDGE, "--add-dir", os.path.dirname(f)]
         r = subprocess.run(cmd, capture_output=True, text=True, cwd=HOME, env=signal_chat.env(),
                            stdin=subprocess.DEVNULL, timeout=3000)
-        return f"{os.path.relpath(f, os.path.expanduser('~'))}: {(r.stdout or r.stderr).strip().splitlines()[-1:] or ''}"
+        name = os.path.relpath(f, os.path.expanduser('~'))
+        if r.returncode:                          # failed partway: keep every entry in memory
+            put_back(f)
+            return f"{name}: failed, memory put back: {(r.stdout or r.stderr).strip()[-200:]}"
+        return f"{name}: {(r.stdout or r.stderr).strip().splitlines()[-1:] or ''}"
 
-    with ThreadPoolExecutor(AT_ONCE) as pool:
-        said = list(pool.map(one, files))
+    def put_back(f):
+        with open(f, "w") as fh:
+            fh.write(before[f])
+
+    said = [one(f) for f in files]                # one at a time: two files can feed one subject
     undone = []
+    for f in files:
+        if not trimmed(before[f], open(f).read()):   # it added or reworded: not allowed
+            put_back(f)
+            undone.append(os.path.relpath(f, os.path.expanduser("~")))
     for repo in (home.AGENT, home.PROJECTS):
         mine = [f for f in files if f.startswith(repo + os.sep)]
-        stat = subprocess.run(["git", "-C", repo, "diff", "--numstat", "--"] + mine,
-                              capture_output=True, text=True).stdout
-        for line in stat.splitlines():
-            added, _, rel = line.split("\t", 2)
-            if added != "0":                      # it added or reworded: not allowed
-                subprocess.run(["git", "-C", repo, "checkout", "--", rel])
-                undone.append(rel)
         changed = [f for f in mine if subprocess.run(
             ["git", "-C", repo, "diff", "--quiet", "--", f]).returncode]
         if changed:
@@ -614,10 +667,10 @@ def tidy():
     for summary in glob.glob(os.path.join(KNOWLEDGE, "*", "summary.md")):
         head = open(summary, errors="replace").read().splitlines()
         title = next((l[2:].strip() for l in head if l.startswith("# ")), "")
-        confirmed = next((l.split("Last confirmed:")[1].split("·")[0].strip()
-                          for l in head if l.startswith("Last confirmed:")), "")
-        try:
-            age = time.time() - time.mktime(time.strptime(confirmed, "%Y-%m-%d"))
+        line = next((l for l in head if l.startswith("Last confirmed:")), "")
+        m = re.search(r"Edited: (\d{4}-\d{2}-\d{2})", line) or re.search(r"Last confirmed: (\d{4}-\d{2}-\d{2})", line)
+        try:                                     # stale means not looked at, so the edit date
+            age = time.time() - time.mktime(time.strptime(m.group(1) if m else "", "%Y-%m-%d"))
         except ValueError:
             age = STALE
         if age >= STALE:
@@ -656,7 +709,8 @@ not, add it where it belongs:
 - to the note that covers it, as a sentence with its source in brackets, or
 - as a new small note in the subject's folder: `# <Subject>: <the fact, stated
   plainly in the words someone would ask with>`, a one-line why, `Last
-  confirmed: {today}`, at most 200 words, sources in brackets; and list it in
+  confirmed: <the date it was said> · Edited: {today}`, at most 200 words,
+  sources in brackets; and list it in
   the subject's summary.md Notes.
 
 Only what is still true: if knowledge, or a later message in these
@@ -886,4 +940,17 @@ if __name__ == "__main__":
         elif "--tidy" in sys.argv:
             tidy()
         else:
-            nightly(dry="--dry" in sys.argv)
+            if "--dry" not in sys.argv:
+                # Housekeeping first, to the end, so the dream reads tidy status
+                # files. Its failure doesn't stop the dream: the day still has
+                # to reach knowledge.
+                import housekeeping
+                try:
+                    housekeeping.run()
+                except BaseException as e:
+                    print(f"housekeeping failed: {e}", flush=True)
+            try:
+                nightly(dry="--dry" in sys.argv)
+            finally:
+                if "--dry" not in sys.argv:
+                    push()                           # whatever got committed, even if the dream failed

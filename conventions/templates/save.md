@@ -10,7 +10,7 @@ The user may stop the session right after this, so leave the work safe to walk a
 
    Record what was decided and why, what was tried and rejected and why — discarded approaches are the part a later session would otherwise re-propose. Say plainly what was left unfinished.
 
-3. **Rewrite `STATUS.md`.** The **Resume Here** block: what was being done, the immediate next step, anything half-finished. Point at `TODO.md` rather than repeating it. If another session has edited this file, add to its work rather than over it.
+3. **Rewrite `STATUS.md`.** The **Resume Here** block: what was being done, the immediate next step, anything half-finished. Point at `TODO.md` rather than repeating it. Then read the whole file and apply `conventions.md`'s test to every line: delete what fails, rewrite changed sections whole, set "Last updated". If another session has edited this file, add to its work rather than over it.
 
 4. **Update `TODO.md`.** Delete what got done — don't strike it through. Add what this session opened. If nothing changed, leave it and say so.
 

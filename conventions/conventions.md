@@ -11,6 +11,8 @@ Your own folder and every project hold the same four things:
 - `MEMORY.md` — short-term facts (see Memory).
 - `sessions/` — one file per session, named `YYYY-MM-DD-HHMM slug.md`: what happened and why. Never edited once written; they're the history, so the status file doesn't have to be.
 
+Every line in `STATUS.md` must pass one test: is it true today, and would a session starting cold need it to act? A decided entry is the decision and its reason in a clause; how you got there belongs in the session file. Whoever touches the file — a session saving, or the nightly housekeeping — deletes what fails the test, rewrites a section whole rather than wedging lines into it, and sets "Last updated" to today. Without this a status file only grows, and soon stops saying where things stand.
+
 **Open every session by reading `STATUS.md`.** Only `CLAUDE.md` and what it imports load on their own, so a new session knows who it is but not where you left off.
 
 ## Projects
