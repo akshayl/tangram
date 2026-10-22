@@ -117,3 +117,18 @@ What in `code/` assumes Claude Code or a Mac, so you know what to replace on ano
 | Locks | `dream.py` | `fcntl` |
 
 Python itself runs everywhere; these are the parts that don't.
+
+## Notes for Codex
+
+From one sandboxed trial with Codex CLI 0.163.0 on a Mac (October 2026), which built a Tangram agent from these files; not yet a full install with accounts and services. The commands are examples of what worked there: check `codex --help` for yours.
+
+- **Instructions.** Codex reads `AGENTS.md` and doesn't follow `@` imports. Make the agent's `AGENTS.md` self-contained, have each project's `AGENTS.md` tell the session to read the agent's files, or have the hook supply the agent's rules each turn.
+- **Recall before every message.** A `UserPromptSubmit` hook in `$CODEX_HOME/hooks.json` (`~/.codex` unless `CODEX_HOME` is set) can add context. Codex runs a hook only once it's trusted: walk the person through trusting it once (`/hooks` in an interactive session). Don't make `--dangerously-bypass-hook-trust` the normal route.
+- **Running headless.** `codex exec --json -C <folder> "<prompt>"` streams events: `thread.started` carries the `thread_id`, replies arrive as `item.completed` items of type `agent_message`, and `error` or `turn.failed` means it failed. Continue a conversation with `codex exec resume <thread_id>`. A message that arrives mid-turn waits for the next turn; that meets part 3 as long as it's queued on disk.
+- **Reading conversations.** Codex keeps them as JSONL under `$CODEX_HOME/sessions/`. Recall and the dream need a reader that turns them into who said what, when, and in which folder. Find the active `CODEX_HOME` rather than assuming `~/.codex`.
+- **Limits on unattended work.** Codex's sandbox is read-only or a writable workspace, not per-file rules. Run each upkeep session `--sandbox read-only`, have it return its edits as structured proposals (`--output-schema`), and apply them with a script that refuses unless all of these hold:
+  1. Every target is one the job may write — the status cleanup: that folder's `STATUS.md` and `TODO.md`; a subject rewrite: files inside that subject's folder; memory: that `MEMORY.md` — resolved to a real path, with no symlinks or `..`, and never an instruction or conventions file.
+  2. Memory loses whole `##` entries only, its header unchanged, nothing added or reworded.
+  3. Each file still has the content the session was given. If it changed since, someone else edited it: refuse, and leave their edit.
+  4. All of a session's edits apply, or none do; any failure restores the files from a snapshot taken before.
+  5. External tools — MCP servers, connectors, a browser — are off for upkeep runs, since a read-only filesystem doesn't stop a tool from changing something elsewhere.
