@@ -22,7 +22,7 @@ They're written for Claude Code on a Mac, the implementation that has been built
 2. **Check what you're building on.** `sw_vers` says whether this is a Mac. If you're Claude Code on a Mac, carry on. Otherwise, check `DESIGN.md`'s list of what it needs from a coding agent, tell them what you'll adapt and anything that won't work here, and ask before starting.
 3. **Look at their existing Claude Code setup** — `~/.claude/CLAUDE.md`, `~/.claude/settings.json`, anything in `~/.claude/commands/` — and tell them in a sentence or two what you found.
 4. **Back it up:** copy `~/.claude` to `~/.claude-before-tangram`, and tell them that one command puts it all back if they don't like the result.
-5. **Merge, never replace.** Their own instructions stay. Everything Tangram adds lives in the agent's folder, so ordinary Claude Code elsewhere on the Mac stays exactly as it was. The only change outside that folder is one hook added to `~/.claude/settings.json` (Step 5), which does nothing outside the agent's folders.
+5. **Merge, never replace.** Their own instructions stay, and ordinary Claude Code sessions outside the agent's folders behave exactly as before. Tell them where things go. The agent itself — its rules, notes, memory, knowledge and code — lives in its folder, and their projects in the projects folder. Outside those: keys and settings in `~/.config/tangram/`; a hook in `~/.claude/settings.json` (Step 5) and a `/save` command in `~/.claude/commands/` (Step 1), both of which do nothing outside the agent's folders; the search index in `~/.local/state/tangram/`; background services in `~/Library/LaunchAgents/`; and tools from Homebrew, with Signal's keys and the voice model under `~/.local/share/`.
 6. **Tools.** You'll need Homebrew (`brew`). If it's missing, it's the one install that asks for their Mac password: explain that, run the installer from brew.sh, and let them type the password. Then `brew install git uv`.
 
 ## Step 1. Let's Meet Your Agent
@@ -35,7 +35,7 @@ They're written for Claude Code on a Mac, the implementation that has been built
    - `conventions/` — copy `conventions/habits.md` and `conventions/conventions.md`.
    - `code/` — copy all of `code/`.
    - `CLAUDE.md` from `conventions/templates/agent-CLAUDE.md`, filled in with the name, their name and the personality in their words.
-   - `STATUS.md`, `TODO.md`, `MEMORY.md` from the templates; an empty `sessions/`, `runs/` and `knowledge/` (with an `index.md` saying "No subjects yet.").
+   - `STATUS.md`, `TODO.md`, `MEMORY.md` from the templates, every `{{…}}` placeholder filled; an empty `sessions/`, `runs/` and `knowledge/` (with an `index.md` saying "No subjects yet.").
    - `VERSION` — copy the repository's `VERSION`. This is how updates know what this setup is at.
    - `updates.md`, with a one-line heading.
    - `.gitignore` with `runs/` and `code/.venv/`.
