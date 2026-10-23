@@ -56,9 +56,10 @@ SINK = tempfile.mkdtemp()                            # where finished tests' thr
 class Base(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
-        self.saved = {k: getattr(s, k) for k in ("rpc", "config", "Session", "RUNS", "INBOX", "OUTBOX", "STATE")}
+        self.saved = {k: getattr(s, k) for k in ("rpc", "config", "Session", "RUNS", "INBOX", "OUTBOX", "STATE", "FRESH")}
         s.RUNS = self.tmp.name
         s.INBOX, s.STATE = os.path.join(s.RUNS, "inbox"), os.path.join(s.RUNS, "threads.json")
+        s.FRESH = os.path.join(s.RUNS, "fresh")
         s.OUTBOX = os.path.join(s.RUNS, "outbox")
         s.config = lambda: CFG
         self.fail_sends, self.calls = 0, []
@@ -73,6 +74,7 @@ class Base(unittest.TestCase):
             return {}
         s.rpc = rpc
         s.time_sleep, s.SAID = None, {}
+        self.saved["HOLD"], s.HOLD = s.HOLD, 0.1        # a held last message goes almost at once
         Stub.told = []
 
     def tearDown(self):
@@ -84,7 +86,7 @@ class Base(unittest.TestCase):
         # Nor may they write to the real runs folder: a send that fails there
         # keeps its reply in the real outbox, for the live listener to send.
         s.RUNS = SINK
-        s.INBOX, s.OUTBOX, s.STATE = (os.path.join(SINK, n) for n in ("inbox", "outbox", "threads.json"))
+        s.INBOX, s.OUTBOX, s.STATE, s.FRESH = (os.path.join(SINK, n) for n in ("inbox", "outbox", "threads.json", "fresh"))
         self.tmp.cleanup()
 
     def sends(self):
@@ -223,7 +225,28 @@ class Worker(Base):
         self.say("chatter during the note")
         self.q.put(("out", {"type": "result"}))
         settle()
-        self.assertEqual(self.sends(), ["answer"])
+        self.assertEqual(len(self.sends()), 1)
+        self.assertRegex(self.sends()[0], r"^answer\n\n\(\d+s\)$")   # the turn's last message says how long
+
+    def test_last_message_ends_with_how_long_it_took(self):
+        self.start()
+        self.message("hi")
+        settle()
+        self.say("working on it")
+        self.say("done")
+        self.q.put(("out", {"type": "result"}))
+        self.assertTrue(until(lambda: len(self.sends()) == 2))
+        self.assertEqual(self.sends()[0], "working on it")
+        self.assertRegex(self.sends()[1], r"^done\n\n\(\d+s\)$")
+
+    def test_failure_with_nobody_waiting_stays_off_the_phone(self):
+        self.start()
+        self.q.put(("out", {"type": "result", "is_error": True, "subtype": "error_during_execution"}))
+        settle()
+        self.assertEqual(self.sends(), [])
+
+    def test_took(self):
+        self.assertEqual((s.took(42.4), s.took(134)), ("42s", "2m 14s"))
 
 
 class State(Base):
@@ -235,6 +258,29 @@ class State(Base):
     def test_restart_item_is_flagged(self):
         path = s.hold(DM, {"kind": "in", "who": "A", "author": "+1222", "stamp": 9, "text": "waiting", "files": []})
         self.assertTrue(s.as_item(s.held(path), path, s.RESTARTED)[4].startswith("[This arrived before"))
+
+    def test_fresh_start_forgets_every_conversation(self):
+        s._remember("mycroft", "old")
+        s._remember(DM, "older")
+        s.start_fresh()
+        self.assertEqual(json.load(open(s.STATE)), {})
+
+    def test_fresh_start_retires_a_running_session(self):
+        class Proc:
+            killed = False
+            def poll(self): return None if not self.killed else 0
+            def kill(self): self.killed = True
+            def wait(self): return 0
+        session = s.Session("mycroft", "/tmp", queue.Queue())
+        session.proc, session.since, session.loaded = Proc(), time.time() - 60, s.rules("/tmp")
+        s._remember("mycroft", "old")
+        session.refresh()
+        self.assertFalse(session.proc.killed)          # nothing newer to start over for
+        s.start_fresh()
+        s._remember("mycroft", "old")                  # as if written back meanwhile
+        session.refresh()
+        self.assertTrue(session.proc.killed)
+        self.assertNotIn("mycroft", s._threads())
 
     def test_attachment_keeper_not_shadowed(self):
         self.assertEqual(s.keep.__code__.co_varnames[0], "a")

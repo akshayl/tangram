@@ -47,6 +47,7 @@ a repo. Log and conversation state are in the agent's `runs/signal/`.
     python3 signal_chat.py listen               run the daemon and answer
     python3 signal_chat.py topics               what is configured
     python3 signal_chat.py send direct:sam hi   say something in a topic
+    python3 signal_chat.py fresh                every chat starts a new conversation
 """
 import json
 import mimetypes
@@ -255,6 +256,44 @@ def _remember(topic, session):
         os.replace(STATE + ".tmp", STATE)
 
 
+# --- a fresh start each night -----------------------------------------------
+#
+# A chat left alone grows for weeks, compacts mid-task and slows every step.
+# The night's status cleanup and dream have already put what mattered into the
+# files, so after them each chat starts over and draws on memory instead.
+# `FRESH` is the moment; a session older than it is retired between turns,
+# never mid-one.
+
+FRESH = os.path.join(RUNS, "fresh")
+
+
+def start_fresh():
+    """Mark the moment and forget every chat's conversation, for the night job."""
+    os.makedirs(RUNS, exist_ok=True)
+    with open(FRESH, "w") as fh:
+        fh.write(time.strftime("%Y-%m-%d %H:%M:%S\n"))
+    with _lock:
+        with open(STATE + ".tmp", "w") as fh:
+            json.dump({}, fh)
+        os.replace(STATE + ".tmp", STATE)
+
+
+def fresh_since():
+    try:
+        return os.path.getmtime(FRESH)
+    except OSError:
+        return 0
+
+
+def _forget(topic):
+    with _lock:
+        st = _threads()
+        if st.pop(topic, None) is not None:
+            with open(STATE + ".tmp", "w") as fh:
+                json.dump(st, fh, indent=1)
+            os.replace(STATE + ".tmp", STATE)
+
+
 # --- the inbox on disk ------------------------------------------------------
 #
 # Signal hands a message over once. Until its reply is sent, the only copy is
@@ -454,17 +493,24 @@ class Session:
     incoming messages, so the worker has one queue to watch.
 
     A running claude never re-reads its rule files, so a session whose rules
-    changed is restarted before it is given the next message."""
+    changed is restarted before it is given the next message. One started before
+    the night's fresh start is retired with its conversation."""
 
     def __init__(self, topic, folder, inbox):
         self.topic, self.folder, self.inbox, self.proc, self.loaded = topic, folder, inbox, None, {}
+        self.since, self.id = 0, None
 
     def alive(self):
         return self.proc is not None and self.proc.poll() is None
 
     def refresh(self):
-        """Restart if the rules moved since this session read them. Only between turns."""
-        if self.alive() and rules(self.folder) != self.loaded:
+        """Restart if the rules moved since this session read them, or start a new
+        conversation after the night's fresh start. Only between turns."""
+        if self.alive() and fresh_since() > self.since:
+            print(f"[{self.topic}] fresh start; new conversation", flush=True)
+            _forget(self.topic)
+            self.kill()
+        elif self.alive() and rules(self.folder) != self.loaded:
             print(f"[{self.topic}] rules changed; restarting the session", flush=True)
             self.kill()
 
@@ -476,16 +522,18 @@ class Session:
             self.start()
 
     def start(self):
-        self.loaded = rules(self.folder)
+        self.loaded, self.since = rules(self.folder), time.time()
         thread = _threads().get(self.topic)
         resume = ["--resume", thread] if thread else ["--session-id", str(uuid.uuid4())]
+        self.id = resume[1]
         self.proc = subprocess.Popen(
             [CLAUDE, "-p", "--input-format", "stream-json", "--output-format", "stream-json",
              "--verbose", "--model", MODEL] + resume,
             cwd=self.folder, env=env(), stdin=subprocess.PIPE, stdout=subprocess.PIPE,
             text=True, bufsize=1)
-        if not thread:
-            _remember(self.topic, resume[1])
+        # A new conversation is remembered only once it has answered something
+        # (see the worker): one that never did has no transcript, and resuming
+        # it fails, and every idle chat would say so on the phone after a restart.
         threading.Thread(target=self._read, args=(self.proc,), daemon=True).start()
 
     def _read(self, proc):
@@ -515,12 +563,25 @@ class Session:
             self.proc.wait()
 
 
+HOLD = 5                                             # seconds a last message waits for its turn to end
+
+
+def took(seconds):
+    """How long a reply took, as it ends the message: 42s, 2m 14s."""
+    m, sec = divmod(int(round(seconds)), 60)
+    return f"{m}m {sec}s" if m else f"{sec}s"
+
+
 def worker(topic, spec, inbox):
     to, folder = address(spec), os.path.expanduser(spec["folder"])
     session = Session(topic, folder, inbox)
     busy, quiet = threading.Event(), threading.Event()  # quiet: a note's turn, never shown
     quote, spoke, last, missed, notes = None, False, time.time(), unsent(topic), []
     turn = []                                        # inbox files the turn under way answers
+    # The last thing said is held back a moment, so the turn's final message can
+    # end with how long it took; anything followed by more
+    # goes at once, and a hold left alone goes after a few seconds.
+    began, last_said = None, None                    # last_said: (text, when)
 
     def typing():                                    # an indicator lasts 15s
         while True:
@@ -561,15 +622,26 @@ def worker(topic, spec, inbox):
             keep_unsent(topic, missed)
         quote, spoke = None, True                    # quote only the first reply
 
+    def release(suffix=""):
+        nonlocal last_said
+        if last_said:
+            say(last_said[0] + suffix)
+        elif suffix and spoke:
+            say(suffix.strip())
+        last_said = None
+
     while True:
         try:
-            kind, *item = inbox.get(timeout=60)
+            kind, *item = inbox.get(timeout=HOLD if last_said else 60)
         except queue.Empty:
+            if last_said and time.time() - last_said[1] >= HOLD:
+                release()
             if not busy.is_set():
                 catch_up()                           # retried each quiet minute, not only on the next reply
             if busy.is_set() and time.time() - last > PATIENCE:
                 busy.clear()                         # so "died" doesn't report it twice
                 session.kill()
+                release()
                 say(f"Nothing happened for {PATIENCE // 60} minutes, so I stopped it.")
                 answered(turn)
                 turn.clear()
@@ -591,7 +663,7 @@ def worker(topic, spec, inbox):
             print(f"[{topic}] {who}: {text[:90]}", flush=True)
             quote = quote or ((author, stamp) if stamp else None)
             if not busy.is_set():
-                spoke = False
+                spoke, began = False, time.time()
                 session.refresh()
             busy.set()
             if path:
@@ -612,10 +684,18 @@ def worker(topic, spec, inbox):
                 for c in ev["message"].get("content", []):
                     text = c.get("text", "").strip() if c.get("type") == "text" else ""
                     if text and text != "No response requested." and not quiet.is_set():
-                        say(text)
+                        release()
+                        last_said = (text, time.time())
             elif ev.get("type") == "result":
                 why = str(ev.get("result") or ev.get("subtype"))[:200]
-                if ev.get("is_error") and expired(why):
+                release(f"\n\n({took(time.time() - began)})" if began and not quiet.is_set() else "")
+                in_turn, began = bool(turn) or began is not None, None
+                sid = getattr(session, "id", None)
+                if sid and not ev.get("is_error") and _threads().get(topic) is None:
+                    _remember(topic, sid)            # it has answered, so it can be resumed
+                if ev.get("is_error") and not in_turn and not quiet.is_set():
+                    print(f"[{topic}] failed with nobody waiting: {why}", flush=True)
+                elif ev.get("is_error") and expired(why):
                     # A running claude keeps the login it started with, so the
                     # next message must find a fresh one.
                     say(EXPIRED)
@@ -633,6 +713,7 @@ def worker(topic, spec, inbox):
             if item[1] is not session.proc:          # one we replaced on purpose
                 continue
             print(f"[{topic}] session exited {item[0]}", flush=True)
+            release()
             # What it was answering goes round once more, flagged; a message that
             # takes the session down twice is set aside rather than looped on.
             for path in turn:
@@ -891,6 +972,9 @@ if __name__ == "__main__":
     elif args[:1] == ["topics"]:
         for name, spec in ((config() or {}).get("topics") or {}).items():
             print(f"{name:10} {spec['folder']}")
+    elif args[:1] == ["fresh"]:
+        start_fresh()
+        print("every chat starts a new conversation at its next turn")
     elif args[:1] == ["send"] and len(args) >= 3:
         print(send(args[1], " ".join(args[2:])))
     elif args[:1] == ["job"] and len(args) >= 4:

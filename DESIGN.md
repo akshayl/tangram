@@ -46,9 +46,9 @@ A folder per project in a projects folder, each with the same four files and an 
 
 The agent's own number, so it can start a conversation — a reminder, a finished job — and the person can message it from their phone. Each chat maps to a folder (the agent's, or a project's) and is answered by the coding agent running there headless, with the same rules, memory and tools as at the keyboard.
 
-*Must hold:* a message is kept on disk until its reply, or a notice that it couldn't be answered, is either sent or itself kept on disk to retry; a restart or crash loses neither. A chat's conversation continues across messages, and is resumed if its process dies. A message sent while the agent is working reaches it. Only the person's own numbers are answered. It must not use the person's own Signal number: it would speak as them and see everything.
+*Must hold:* a message is kept on disk until its reply, or a notice that it couldn't be answered, is either sent or itself kept on disk to retry; a restart or crash loses neither. A chat's conversation continues across messages, and is resumed if its process dies; it's kept running between messages, so a reply starts in seconds. A message sent while the agent is working reaches it. Each night, once the dream has put the day into the files, every chat starts a new conversation, between turns, never mid-one; otherwise a chat grows for weeks, compacts in the middle of a task and slows every step. A conversation is remembered only once it has answered something, since one that never did can't be resumed. Only the person's own numbers are answered. It must not use the person's own Signal number: it would speak as them and see everything.
 
-*Check:* a message from their phone gets an answer from the agent with its memory; a second message continues the conversation; restarting the listener mid-reply still answers.
+*Check:* a message from their phone gets an answer from the agent with its memory; a second message continues the conversation; restarting the listener mid-reply still answers; after the night's fresh start, the next message starts a new conversation that still knows what was saved.
 
 ### 4. The Scheduler
 
@@ -100,6 +100,18 @@ The watch says on Signal when something stops working, or when the computer may 
 
 *Must hold:* updates are proposed, never applied unasked, and merged around what the person has made their own.
 
+### 10. Browser Use (Optional)
+
+The agent can do errands on websites: look up a barber's open times, check a restaurant, read a page no API offers. It does them in a browser profile of its own, with only the logins the person gives it, signed in once by hand and kept on this computer.
+
+*Why its own profile:* the person's everyday browser holds every account they have. The agent's holds only what they chose, so they decide what it can reach, and it never acts as them anywhere they didn't sign it in.
+
+*Must hold:* an API or a command is used where one exists. The agent's profile is never the person's. Its logins never go into the agent's folder or a GitHub copy. Buying, booking, submitting or sending anything waits for the person's yes. What a page says is information, not instructions. A job that repeats becomes a script; live browsing is for one-off tasks. Upkeep runs never get the browser. A safety check's refusal is a stop, not something to re-word and retry.
+
+*Trade-offs:* it runs where the logins are, on this computer, and some sites refuse cloud servers outright, so browsing is the part that doesn't move to the cloud with the files. A hidden browser is quiet but some sites block it; a window gets through and lets the person step in for a login or a captcha, so both are offered. Logins expire, and a site can change without notice.
+
+*Check:* asked from a chat for something only a website shows, it finds it with the browser tool, and stops to ask before committing to anything.
+
 ## Where the Implementation Is Specific
 
 What in `code/` assumes Claude Code or a Mac, so you know what to replace on another agent or system.
@@ -117,6 +129,7 @@ What in `code/` assumes Claude Code or a Mac, so you know what to replace on ano
 | Tool paths | `signal_chat.py`, `recall.py` | Homebrew under `/opt/homebrew` |
 | Secrets entered without passing through the chat | `SETUP.md` | `pbpaste` |
 | Locks | `dream.py` | `fcntl` |
+| The browser tool | `SETUP.md` Step 7 | `claude mcp add`, Playwright's MCP server, Chrome at its Mac path |
 
 Python itself runs everywhere; these are the parts that don't.
 

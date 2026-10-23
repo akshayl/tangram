@@ -1064,3 +1064,5 @@ if __name__ == "__main__":
             finally:
                 if "--dry" not in sys.argv:
                     push()                           # whatever got committed, even if the dream failed
+                    # Then every chat starts over, now that the day is in the files.
+                    signal_chat.start_fresh()

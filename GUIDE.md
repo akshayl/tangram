@@ -18,6 +18,8 @@ A folder that isn't one of your agent's projects is plain Claude Code, as it alw
 
 Signal is also how your agent gets in touch with you first: a reminder you asked for, a routine's result, or something that needs your attention. It's the same agent everywhere, with the same memory. It answers wherever you asked: on Signal, or in Claude Code.
 
+On a longer task it tells you what it's doing as it goes, and each reply on Signal ends with how long it took. Each night, after it has saved what the day taught it, every Signal chat starts a fresh conversation, so the first message of the morning starts clean and quick.
+
 ## Email
 
 Your agent has its own email address (it's in its memory; ask it). Forward it things — a receipt, a booking, a document — and ask it to take a look. It can email you too, whenever you ask, or on a schedule.
@@ -44,6 +46,10 @@ Your agent lives on your Mac, so it only works while the Mac is awake. Plugged i
 You don't do anything. Before every message, your agent looks back through everything you've told it and everything it has written, and reminds itself of what's relevant. Every night it "dreams": it reads the day and keeps tidy notes, by subject, of what it has learned. It all stays on your Mac.
 
 It gets better the more you use it. In the first few weeks it knows little; after a while it remembers the things you'd otherwise have to repeat.
+
+## Errands on the Web
+
+If you set up the browser, your agent can look things up and do errands on websites — open times, availability, prices — in a Chrome of its own. It asks before buying, booking, submitting or sending anything. For a site that needs an account, ask it to open its Chrome for you; sign in once, and it stays signed in there, on this Mac only. During a task a Chrome icon may sit in the Dock looking frozen: leave it, it's working.
 
 ## Your Copy on GitHub
 
