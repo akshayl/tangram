@@ -130,14 +130,14 @@ They're written for Claude Code on a Mac, the implementation that has been built
 
 ## Step 7. Let's Let Your Agent Use a Browser (Optional)
 
-*What it is:* your agent can look things up and do errands on websites — a barber's open times, a restaurant's availability, a price — in a Chrome of its own, with only the logins you give it. Your own browser and its accounts stay yours. It asks before buying, booking, submitting or sending anything. Ask whether they'd like it; if not, note it and skip to Finishing.
+*What it is:* your agent can look things up and do errands on websites — a barber's open times, a restaurant's availability, a price — in its own Chrome instance and data folder, with only the logins you give it. Your own browser and its accounts stay yours. It asks before buying, booking, submitting or sending anything. Ask whether they'd like it; if not, note it and skip to Finishing.
 
 1. **Chrome and Node.** Check Google Chrome is in `/Applications`; if not, ask them to install it from google.com/chrome. `brew install node` if `npx` is missing.
-2. **Its own profile:** `mkdir -p ~/.config/tangram/chrome-profile ~/.local/state/tangram/browser`.
+2. **Its own Chrome data folder:** `mkdir -p ~/.config/tangram/chrome ~/.local/state/tangram/browser`. Chrome keeps logins, cookies and history in a data folder; giving the agent its own makes a separate Chrome instance, apart from any browser they use. Explain that it isn't a profile in their Chrome and won't appear in Chrome's profile picker.
 3. **The browser tool, for every session**, in two versions: one with no window, the default, and one that opens a window, for sites that block a hidden browser or need them to sign in.
-   `claude mcp add --scope user browser -- npx -y @playwright/mcp@0.0.83 --headless --user-data-dir ~/.config/tangram/chrome-profile --executable-path "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --output-dir ~/.local/state/tangram/browser`
+   `claude mcp add --scope user browser -- npx -y @playwright/mcp@0.0.83 --headless --user-data-dir ~/.config/tangram/chrome --executable-path "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --output-dir ~/.local/state/tangram/browser`
    and the same again named `browser-window`, without `--headless`. The output folder keeps page snapshots out of their folders.
-4. **Logins.** Explain: for a site that needs an account, they sign in once in the agent's Chrome, and it stays signed in there, on this Mac — never in the agent's folder or on GitHub. Open it for them with `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --user-data-dir=$HOME/.config/tangram/chrome-profile <site>`; they sign in and close the window. Only what they sign into is open to the agent. They can do this any time; the agent can open it for them.
+4. **Logins.** Explain: for a site that needs an account, they sign in once in the agent's Chrome, and it stays signed in there, on this Mac — never in the agent's folder or on GitHub. Open it for them with `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --user-data-dir=$HOME/.config/tangram/chrome <site>`; they sign in and close the window. Only what they sign into is open to the agent. They can do this any time; the agent can open it for them.
 5. **Tell them what to expect.** While a task runs with no window, a Chrome icon may show in the Dock and look frozen; it isn't — leave it. Upkeep runs at night never get the browser.
 6. Restart the Signal listener so chats have the tool: `launchctl kickstart -k gui/$(id -u)/tangram.signal`.
 

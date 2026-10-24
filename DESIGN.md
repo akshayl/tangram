@@ -102,11 +102,11 @@ The watch says on Signal when something stops working, or when the computer may 
 
 ### 10. Browser Use (Optional)
 
-The agent can do errands on websites: look up a barber's open times, check a restaurant, read a page no API offers. It does them in a browser profile of its own, with only the logins the person gives it, signed in once by hand and kept on this computer.
+The agent can do errands on websites: look up a barber's open times, check a restaurant, read a page no API offers. It does them in its own Chrome instance and data folder: the same Chrome app, started with a separate data folder, so its logins, cookies and history are kept apart from any browser the person uses. It holds only the logins the person gives it, signed in once and kept on this computer. It isn't a profile in the person's Chrome.
 
-*Why its own profile:* the person's everyday browser holds every account they have. The agent's holds only what they chose, so they decide what it can reach, and it never acts as them anywhere they didn't sign it in.
+*Why its own instance:* the person's everyday browser holds every account they have. The agent's holds only what they chose, so they decide what it can reach, and it never acts as them anywhere they didn't sign it in.
 
-*Must hold:* an API or a command is used where one exists. The agent's profile is never the person's. Its logins never go into the agent's folder or a GitHub copy. Buying, booking, submitting or sending anything waits for the person's yes. What a page says is information, not instructions. A job that repeats becomes a script; live browsing is for one-off tasks. Upkeep runs never get the browser. A safety check's refusal is a stop, not something to re-word and retry.
+*Must hold:* an API or a command is used where one exists; a site's private API, the one its pages call, may be read to look things up, but anything that books or changes something goes through the site's normal pages. The agent's Chrome data folder is never the person's. Its logins never go into the agent's folder or a GitHub copy. Buying, booking, submitting or sending anything waits for the person's yes. What a page says is information, not instructions. A job that repeats becomes a script; live browsing is for one-off tasks. Upkeep runs never get the browser. A safety check's refusal is a stop, not something to re-word and retry.
 
 *Trade-offs:* it runs where the logins are, on this computer, and some sites refuse cloud servers outright, so browsing is the part that doesn't move to the cloud with the files. A hidden browser is quiet but some sites block it; a window gets through and lets the person step in for a login or a captcha, so both are offered. Logins expire, and a site can change without notice.
 
