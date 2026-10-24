@@ -82,11 +82,11 @@ Each night, once the computer has been idle for half an hour: the status cleanup
 
 *Check:* after a night, `knowledge/` has notes citing that day, memory is shorter, and status files are current. A dream session asked to write outside its folder is refused, by the enforcement rather than by the model choosing not to.
 
-### 8. The GitHub Copy (Optional)
+### 8. GitHub Sync (Optional)
 
 Private GitHub repositories for the agent's folder and the projects folder, pushed every night after the dream, and whenever a session saves.
 
-*Why:* without it, everything the agent has learned lives on one computer, and is lost with it. With it, a new computer can be rebuilt from the copy, and a session elsewhere — another machine, or the cloud — can start from the same files.
+*Why:* without it, everything the agent has learned lives on one computer, and is lost with it. With it, a new computer can be rebuilt from the synced repositories, and a session elsewhere — another machine, or the cloud — can start from the same files.
 
 *Must hold:* the repositories are private. Credentials, keys and logins are never in them (they live in a separate config folder). A push never forces: if GitHub has commits this computer doesn't, it stops and tells the person.
 
@@ -106,7 +106,7 @@ The agent can do errands on websites: look up a barber's open times, check a res
 
 *Why its own instance:* the person's everyday browser holds every account they have. The agent's holds only what they chose, so they decide what it can reach, and it never acts as them anywhere they didn't sign it in.
 
-*Must hold:* an API or a command is used where one exists; a site's private API, the one its pages call, may be read to look things up, but anything that books or changes something goes through the site's normal pages. The agent's Chrome data folder is never the person's. Its logins never go into the agent's folder or a GitHub copy. Buying, booking, submitting or sending anything waits for the person's yes. What a page says is information, not instructions. A job that repeats becomes a script; live browsing is for one-off tasks. Upkeep runs never get the browser. A safety check's refusal is a stop, not something to re-word and retry.
+*Must hold:* an API or a command is used where one exists; a site's private API, the one its pages call, may be read to look things up, but anything that books or changes something goes through the site's normal pages. The agent's Chrome data folder is never the person's. Its logins never go into the agent's folder or the synced repositories. Buying, booking, submitting or sending anything waits for the person's yes. What a page says is information, not instructions. A job that repeats becomes a script; live browsing is for one-off tasks. Upkeep runs never get the browser. A safety check's refusal is a stop, not something to re-word and retry.
 
 *Trade-offs:* it runs where the logins are, on this computer, and some sites refuse cloud servers outright, so browsing is the part that doesn't move to the cloud with the files. A hidden browser is quiet but some sites block it; a window gets through and lets the person step in for a login or a captcha, so both are offered. Logins expire, and a site can change without notice.
 

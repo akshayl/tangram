@@ -16,6 +16,6 @@ The user may stop the session right after this, so leave the work safe to walk a
 
 5. **Update `MEMORY.md`** only for durable facts you could not re-derive from the repo. Not behaviour, not status, not work still to do. Update the entry that already covers something rather than adding a second.
 
-6. **Commit.** Once per decision made or thing built. If the user has chosen to keep a copy on GitHub, push too.
+6. **Commit.** Once per decision made or thing built. If the user has chosen to sync to GitHub, push too.
 
 Then say what you saved, what you deliberately did not, and anything still open.

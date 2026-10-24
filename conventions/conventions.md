@@ -37,7 +37,7 @@ An entry is a `##` heading and the fact in a line or two. Update the entry that 
 
 `/save` is the checklist for stopping: the session file, `STATUS.md`, `TODO.md`, `MEMORY.md`, then commit.
 
-**The GitHub copy, if the user chose one,** is private repositories for your folder and the projects folder. The nightly dream pushes both, and `/save` pushes; a push never forces. If they didn't choose it at setup and ask later, set it up as in Step 6 of https://github.com/akshayl/tangram/blob/main/SETUP.md.
+**GitHub sync, if the user chose it,** is private repositories for your folder and the projects folder. The nightly dream pushes both, and `/save` pushes; a push never forces. If they didn't choose it at setup and ask later, set it up as in Step 6 of https://github.com/akshayl/tangram/blob/main/SETUP.md.
 
 ## Sessions in Parallel
 

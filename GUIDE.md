@@ -51,9 +51,9 @@ It gets better the more you use it. In the first few weeks it knows little; afte
 
 If you set up the browser, your agent can look things up and do errands on websites — open times, availability, prices — in its own Chrome instance, with its own data folder, separate from any browser you use. It asks before buying, booking, submitting or sending anything. For a site that needs an account, ask it to open its Chrome for you; sign in once, and it stays signed in there, on this Mac only. During a task a Chrome icon may sit in the Dock looking frozen: leave it, it's working.
 
-## Your Copy on GitHub
+## Syncing to GitHub
 
-If you chose one at setup, your agent's folder and your projects are copied to private repositories on GitHub every night, so a lost or broken Mac doesn't take what your agent has learned with it. Only you can see them. If you didn't, and want one now, ask your agent: "keep a copy on GitHub."
+If you chose one at setup, your agent's folder and your projects are synced to private repositories on GitHub every night, so a lost or broken Mac doesn't take what your agent has learned with it. Only you can see them. If you didn't, and want one now, ask your agent to sync to GitHub.
 
 ## Two Things Worth Knowing
 

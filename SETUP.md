@@ -113,16 +113,16 @@ They're written for Claude Code on a Mac, the implementation that has been built
 
 **Try it:** in a new session, ask about something said earlier in a different conversation. Tell them: in a few days the agent will show them its first dream. Schedule a reminder for that with them.
 
-## Step 6. Let's Keep a Copy on GitHub (Optional)
+## Step 6. Let's Sync to GitHub (Optional)
 
-*What it is:* a private copy of your agent's folder and your projects on GitHub, updated every night. Without it, everything your agent learns lives only on this Mac: if the Mac is lost or breaks, it's gone. With it, a new computer can be set up from the copy, and your agent can one day work from somewhere else — another machine, or the cloud — knowing what it knows here. It needs a free GitHub account, and takes about five minutes.
+*What it is:* your agent's folder and your projects, synced to private repositories on GitHub every night. Without it, everything your agent learns lives only on this Mac: if the Mac is lost or breaks, it's gone. With it, a new computer can be set up from the synced repositories, and your agent can one day work from somewhere else — another machine, or the cloud — knowing what it knows here. It needs a free GitHub account, and takes about five minutes.
 
 1. Ask whether they'd like it. If not, note it in `runs/setup.md` and tell them they can ask the agent for it any time; skip to Step 7.
 2. **An account.** If they don't have one, they sign up at github.com (free). Walk them through it.
 3. **Sign in.** `brew install gh`. Signing in needs them, so give them this to type, and tell them it opens a browser where they approve with a code it shows: `! gh auth login --web --git-protocol https --hostname github.com --skip-ssh-key`. Then run `gh auth setup-git` yourself.
-4. **What goes up.** Tell them plainly: everything in the agent's folder and the projects folder goes into the copy — notes, memory, knowledge, session files, and any documents they keep in a project. Keys and passwords don't: they live in `~/.config/tangram/`, outside both. If there's anything in a project they'd rather not have on GitHub, even privately, add it to that folder's `.gitignore` now.
-5. **Make the copies.** Ask what to call them; suggest `<agent name>` and `<agent name>-projects`. Then `gh repo create <name> --private --source=<agent folder> --push`, and the same for the projects folder. Both must be **private**.
-6. **Keeping it current needs nothing more.** The nightly dream pushes both after it runs, and `/save` pushes too. A push never overwrites what's on GitHub; if the copy has changes this Mac doesn't, the agent tells them on Signal.
+4. **What goes up.** Tell them plainly: everything in the agent's folder and the projects folder is synced — notes, memory, knowledge, session files, and any documents they keep in a project. Keys and passwords don't: they live in `~/.config/tangram/`, outside both. If there's anything in a project they'd rather not have on GitHub, even privately, add it to that folder's `.gitignore` now.
+5. **Create the repositories.** Ask what to call them; suggest `<agent name>` and `<agent name>-projects`. Then `gh repo create <name> --private --source=<agent folder> --push`, and the same for the projects folder. Both must be **private**.
+6. **Keeping it current needs nothing more.** The nightly dream pushes both after it runs, and `/save` pushes too. A push never overwrites what's on GitHub; if GitHub has changes this Mac doesn't, the agent tells them on Signal.
 
 **Check:** `gh repo view <name> --json visibility` says `PRIVATE` for both, and `git status -sb` in each folder shows it level with GitHub.
 
